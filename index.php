@@ -132,8 +132,8 @@ include_once("dbconfig.php");
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
   
-  <script src="web3libs/web3utils.js"></script>
-  <script type="module">
+  <script src="web3libs/web3utils.js" type="module"></script>
+  <script>
 	function walletLogin()
 	{
 		const theForm = document.getElementById("loginform");
