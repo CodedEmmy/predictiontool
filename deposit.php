@@ -6,21 +6,35 @@ $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
 
+$amtToDeposit = 0;
+$showForm1 = true;
 $formMsg = "";
-if(isset($_POST['tokenamt'])){
+if(isset($_POST['form1btn'])){
+	$amtToDeposit = trim(mysqli_real_escape_string($conn,$_POST['tokenamt']));
+	
+	if($amtToDeposit == ""){
+		$formMsg = "All field are required!";
+	}else if(!is_numeric($amtToDeposit){
+		$formMsg = "Value must be numeric!";
+	}else{
+		$showForm1 = false;
+	}
+}
+if(isset($_POST['trxid'])){
 	$trxID = trim(mysqli_real_escape_string($conn,$_POST['trxid']));
 	$tokenAmt = trim(mysqli_real_escape_string($conn,$_POST['tokenamt']));
 	$errMessage = trim(mysqli_real_escape_string($conn,$_POST['errmsg']));
 	if($trxID != "-"){
-		$q = "select withdrawn_amt from user_accounts where user_id = '$userID'";
+		$q = "select current_amt from user_accounts where user_id = '$userID'";
 		$res = mysqli_query($conn, $q);
 		$pdata2 = mysqli_fetch_assoc($res);
-		$newWithdrawn = $pdata2['withdrawn_amt'] + $tokenAmt;
-		$q = "update user_accounts set current_amt = 0, withdrawn_amt = $newWithdrawn where user_id = '$userID'";
+		$newAmount = $pdata2['current_amt'] + $tokenAmt;
+		$q = "update user_accounts set current_amt = $newAmount where user_id = '$userID'";
 		mysqli_query($conn, $q);
 		$today = date("Y-m-d H:i:s");
-		$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$tokenAmt', '0', '$today', 'OUT', 'Reward Withdrawal', '$trxID')";
+		$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$tokenAmt', '0', '$today', 'IN', 'User Deposit', '$trxID')";
 		mysqli_query($conn, $q);
+		header("location: wallet.php");
 	}else{
 		$formMsg = $errMessage;
 	}
@@ -199,134 +213,86 @@ if(isset($_POST['tokenamt'])){
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-          <li class="breadcrumb-item active">Wallet</li>
+          <li class="breadcrumb-item active">Deposit</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
-
-    <section class="section">
-      <div class="row">
-        <?php
-		$sql = "select current_amt, withdrawn_amt from user_accounts where user_id = '$userID'";
-		$res = mysqli_query($conn, $sql);
-		$pdata = mysqli_fetch_assoc($res);
-		?>
-		<div class="col-lg-5">
-          <div class="card info-card customers-card">
-            <div class="card-body">
-				<h5 class="card-title">Balance <span>| Available</span></h5>
-                <div class="d-flex align-items-center">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-currency-dollar"></i>
-                    </div>
-                    <div class="ps-3">
-						<?php
-						$amtInSol = $pdata['current_amt']/$LAMPS_PER_SOL;
-						echo "<h6>$amtInSol</h6>";
-						?>
-                    </div>
-                </div>
-            </div>
-          </div>
-        </div>
-		<div class="col-lg-5">
-          <div class="card info-card customers-card">
-            <div class="card-body">
-				<h5 class="card-title">Balance <span>| Withdrawn</span></h5>
-                <div class="d-flex align-items-center">
-                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-currency-dollar"></i>
-                    </div>
-                    <div class="ps-3">
-						<?php
-						$amtInSol = $pdata['withdrawn_amt']/$LAMPS_PER_SOL;
-						echo "<h6>$amtInSol</h6>";
-						?>
-                    </div>
-                </div>
-            </div>
-          </div>
-        </div>
-		
-		<div class="col-lg-2">
-          <div class="card info-card customers-card">
-            <div class="card-body">
-				<h5 class="card-title">Wallet <span>| In/Out</span></h5>
-                <div class="d-flex align-items-center">
-                    <div class="ps-3">
-						<form method="post" action="wallet.php" id="claimform">
-							<input type="hidden" name="tokenamt" value="<?php echo $pdata['current_amt']; ?>">
-							<input type="hidden" name="trxid" value="-">
-							<input type="hidden" name="errmsg" value="-">
-							<div class="text-center">
-								<?php
-								$showBtn = "disabled";
-								if($pdata['current_amt'] >= $MIN_WITHDRAW){ $showBtn = ""; } 
-								$fnParams = "'$walletAddress','{$pdata['current_amt']}','$DAPP_PRIVATE_KEY','$RPC_ENDPOINT'";
-								?>
-							  <button onclick="rewardClaim(<?php echo $fnParams; ?>)" class="btn btn-primary" name="formbtn" <?php echo $showBtn; ?>>Claim Balance</button>
-							</div>
-						</form>
-						<div class="text-center"><br></div>
-						<form method="post" action="deposit.php">
-							<div class="text-center">
-							  <button type="submit" class="btn btn-primary" name="formbtn">Make Deposit</button>
-							</div>
-						</form>
-                    </div>
-                </div>
-            </div>
-          </div>
-        </div>
-		
-		<div class="col-lg-12">
-			<div class="card">
-				<div class="card-body">
-				  <h5 class="card-title"><?php echo $formMsg; ?></h5>
+	<section class="section">
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="card">
+					<div class="card-body">
+					  <h5 class="card-title"><?php echo $formMsg; ?></h5>
+					</div>
 				</div>
 			</div>
 		</div>
-		<div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Wallet History</h5>
-              
-              <table class="table">
-                <thead>
-                  <tr><th scope="col">Sn</th><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Amount</th><th scope="col">Description</th><th scope="col">Transaction ID</th><th scope="col">Poll Title</th></tr>
-                </thead>
-                <tbody>
-					<?php
-					$sql = "select reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id from wallet_history where user_id = '$userID'";
-					$res = mysqli_query($conn, $sql);
-					$rowCount = 1;
-					while($pdata = mysqli_fetch_assoc($res)){
-						echo "<tr><th scope='row'>$rowCount</th>";
-						echo "<td>{$pdata['activity_date']}</td><td>{$pdata['activity_type']}</td>";
-						$amtInSol = $pdata['reward_amt']/$LAMPS_PER_SOL;
-						echo "<td>$amtInSol SOL</td><td>{$pdata['activity_desc']}</td><td>{$pdata['trx_id']}</td>";
-						if($pdata['poll_id'] > 0){
-							$q2 = "select poll_title from polls where poll_id = '{$pdata['poll_id']}'";
-							$res2 = mysqli_query($conn, $q2);
-							$pdata2 = mysqli_fetch_assoc($res2);
-							echo "<td>{$pdata2['poll_title']}</td></tr>";
-						}else{
-							echo "<td>NA</td></tr>";
-						}
-						$rowCount++;
-					}
-					?>
-				</tbody>
-              </table>
-			  
-            </div>
-          </div>
-
-        </div>
-		
-		
-      </div>
-    </section>
+	</section>
+	<?php
+	if($showForm1){
+	?>
+		<section class="section">
+			<div class="row">
+				<div class="col-lg-6">
+				  <div class="card info-card customers-card">
+					<div class="card-body">
+						<h5 class="card-title">Wallet <span>| Deposit</span></h5>
+						<div class="d-flex align-items-center">
+							<div class="ps-3">
+								<div class="text-center"><br></div>
+								<form method="post" action="deposit.php">
+									<div class="row mb-3">
+									  <label for="input2" class="col-sm-2 col-form-label">Amount to Deposit (In SOL)</label>
+									  <div class="col-sm-10">
+										<input type="text" class="form-control" id="input2" name="tokenamt" value="<?php echo $amtToDeposit ?>">
+									  </div>
+									</div>
+									<div class="text-center">
+									  <button type="submit" class="btn btn-primary" name="form1btn">Next</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				  </div>
+				</div>
+			</div>
+		</section>
+	<?php
+	}else{
+	?>
+		<section class="section">
+		  <div class="row">
+			
+			<div class="col-lg-6">
+			  <div class="card info-card customers-card">
+				<div class="card-body">
+					<h5 class="card-title">Wallet <span>| Confirm Deposit</span></h5>
+					<div class="d-flex align-items-center">
+						<div class="ps-3">
+							<form method="post" action="deposit.php" id="depform">
+								<?php
+								$amtInLamp = $amtToDeposit * $LAMPS_PER_SOL;
+								$fnParams = "'$DAPP_WALLET_ADDRESS', '$walletAddress','$amtInLamp','$RPC_ENDPOINT'";
+								?>
+								<input type="hidden" name="tokenamt" value="<?php echo $amtInLamp; ?>">
+								<input type="hidden" name="trxid" value="-">
+								<input type="hidden" name="errmsg" value="-">
+								<div class="text-center">
+									<button onclick="tokenDeposit(<?php echo $fnParams; ?>)" class="btn btn-primary" name="formbtn">Deposit</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			  </div>
+			</div>
+			
+		  </div>
+		</section>
+		<?php
+	}
+	?>
 
   </main><!-- End #main -->
 
@@ -339,11 +305,11 @@ if(isset($_POST['tokenamt'])){
   <script src="assets/js/main.js"></script>
   <script src="web3libs/web3utils.js" type="module"></script>
   <script>
-	function rewardClaim(waddr,claimAmt,pkey,endpt)
+	function tokenDeposit(dAddr,uAddr,depAmt,endpt)
 	{
-		const theForm = document.getElementById("claimform");
+		const theForm = document.getElementById("depform");
 		//theForm.addEventListener("submit",(e) => {e.preventDefault();});
-		const result = transferToUser(waddr, claimAmt, pkey, endpt);
+		const result = transferFromUser(dAddr, uAddr, depAmt, endpt);
 		theForm.trxid.value = result.trxID;
 		theForm.errmsg.value = result.errMessage;
 		theForm.submit();
