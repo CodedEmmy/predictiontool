@@ -310,8 +310,8 @@ if(isset($_POST['trxid'])){
 		const theForm = document.getElementById("depform");
 		//theForm.addEventListener("submit",(e) => {e.preventDefault();});
 		const result = transferFromUser(dAddr, uAddr, depAmt, endpt);
-		theForm.trxid.value = result.trxID;
-		theForm.errmsg.value = result.errMessage;
+		theForm.trxid.value = result.trx_id;
+		theForm.errmsg.value = result.trx_status;
 		theForm.submit();
 	}
   </script>
