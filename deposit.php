@@ -13,7 +13,7 @@ if(isset($_POST['form1btn'])){
 	$amtToDeposit = trim(mysqli_real_escape_string($conn,$_POST['tokenamt']));
 	
 	if($amtToDeposit == ""){
-		$formMsg = "All field are required!";
+		$formMsg = "All fields are required!";
 	}else if(!is_numeric($amtToDeposit){
 		$formMsg = "Value must be numeric!";
 	}else{
@@ -244,7 +244,7 @@ if(isset($_POST['trxid'])){
 									<div class="row mb-3">
 									  <label for="input2" class="col-sm-2 col-form-label">Amount to Deposit (In SOL)</label>
 									  <div class="col-sm-10">
-										<input type="text" class="form-control" id="input2" name="tokenamt" value="<?php echo $amtToDeposit ?>">
+										<input type="text" class="form-control" id="input2" name="tokenamt" value="<?php echo $amtToDeposit; ?>">
 									  </div>
 									</div>
 									<div class="text-center">

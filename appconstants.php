@@ -9,4 +9,5 @@ $RPC_ENDPOINT = "devnet"; //"mainnet-beta", or "Your preferred end point url str
 $MIN_DEPOSIT = 0;
 $MIN_WITHDRAW = 0;
 $MIN_INCENTIVE = 0;
+$POLL_FEE = 0;
 ?>
