@@ -224,6 +224,7 @@ if(isset($_POST['tokenamt'])){
 						$amtInSol = $pdata['current_amt']/$LAMPS_PER_SOL;
 						echo "<h6>$amtInSol</h6>";
 						?>
+						<span class="text-danger small pt-1 fw-bold"><?php echo $MIN_WITHDRAW; ?></span>
                     </div>
                 </div>
             </div>
