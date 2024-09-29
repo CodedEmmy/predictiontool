@@ -221,12 +221,13 @@ $walletAddress = $_SESSION['w_address'];
                 <div class="accordion-item">
                   <h2 class="accordion-header">
                     <button class="accordion-button collapsed" data-bs-target="#faqsOne-3" type="button" data-bs-toggle="collapse">
-                      What features are available?
+                      How to use CrowdWise?
                     </button>
                   </h2>
                   <div id="faqsOne-3" class="accordion-collapse collapse" data-bs-parent="#faq-group-1">
                     <div class="accordion-body">
-                      Voluptates magni amet enim perspiciatis atque excepturi itaque est. Sit beatae animi incidunt eum repellat sequi ea saepe inventore. Id et vel et et. Nesciunt itaque corrupti quia ducimus. Consequatur maiores voluptatum fuga quod ut non fuga.
+                      Register/Login by connecting your Phantom wallet.<br>As a Creator: Create a topic for voting (it can be incentivised or not). Wait for poll to be voted on, close the poll and obtain the results. A creator can also vote on other user polls/topics.
+					  <br>As a user: Vote on available polls. If the poll is incentivised, recieve your share of the reward pool at the close of the poll. Withdraw your rewards to your wallet.
                     </div>
                   </div>
                 </div>
@@ -234,12 +235,19 @@ $walletAddress = $_SESSION['w_address'];
                 <div class="accordion-item">
                   <h2 class="accordion-header">
                     <button class="accordion-button collapsed" data-bs-target="#faqsOne-4" type="button" data-bs-toggle="collapse">
-                      How to use CrowdWise?
+                      Fees and Rewards
                     </button>
                   </h2>
                   <div id="faqsOne-4" class="accordion-collapse collapse" data-bs-parent="#faq-group-1">
                     <div class="accordion-body">
-                      Numquam ut reiciendis aliquid. Quia veritatis quasi ipsam sed quo ut eligendi et non. Doloremque sed voluptatem at in voluptas aliquid dolorum.
+                      <ul>
+					  <li>Creating a prediction poll requires a creation fee to discourage spam polls</li>
+					  <li>Incentivised polls (i.e polls with rewards) must have a minimum of 0.05 SOL as reward pool. There's currently no maximum cap</li>
+					  <li>Creation fees can be paid from a user's rewards. If the available rewards are insufficient, a creator can deposit funds from their on-chain Solana wallet.</li>
+					  <li>Users can claim rewards to their on-chain Solana wallets once the minimum threshold is reached.</li>
+					  <li>Voting has no fees</li>
+					  </ul>
+					  <strong>Notes:</strong> If an incentivised poll recieves 0 votes by the time it is closed, the rewards in the reward pool are refunded back to the creator's wallet. However, if the result is inconclusive (i.e there's a tie in opinions), voters will still be paid their rewards.
                     </div>
                   </div>
                 </div>
