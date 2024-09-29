@@ -195,12 +195,12 @@ $walletAddress = $_SESSION['w_address'];
                 <div class="accordion-item">
                   <h2 class="accordion-header">
                     <button class="accordion-button collapsed" data-bs-target="#faqsOne-1" type="button" data-bs-toggle="collapse">
-                      What is Crowd Prediction?
+                      What is a Crowd Prediction System?
                     </button>
                   </h2>
                   <div id="faqsOne-1" class="accordion-collapse collapse" data-bs-parent="#faq-group-1">
                     <div class="accordion-body">
-                      Ut quasi odit odio totam accusamus vero eius. Nostrum asperiores voluptatem eos nulla ab dolores est asperiores iure. Quo est quis praesentium aut maiores. Corrupti sed aut expedita fugit vero dolorem. Nemo rerum sapiente. A quaerat dignissimos.
+                      A Crowd Prediction System is a prediction or forecasting method that relies on aggregate information gathered from a group (crowd) of people about a particular topic.
                     </div>
                   </div>
                 </div>
@@ -213,7 +213,7 @@ $walletAddress = $_SESSION['w_address'];
                   </h2>
                   <div id="faqsOne-2" class="accordion-collapse collapse" data-bs-parent="#faq-group-1">
                     <div class="accordion-body">
-                      In minus quia impedit est quas deserunt deserunt et. Nulla non quo dolores minima fugiat aut saepe aut inventore. Qui nesciunt odio officia beatae iusto sed voluptatem possimus quas. Officia vitae sit voluptatem nostrum a.
+                      CrowdWise is a simple prediction/decision making tool that works based on the concept of a crowd prediction system. The basic workflow is simple; a user creates a topic with a number of possible options. Other users vote on the topic by selecting the option they think is best or most likely. In the final result, the option with the highest ranking is considered the best option.
                     </div>
                   </div>
                 </div>

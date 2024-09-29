@@ -262,11 +262,19 @@ $walletAddress = $_SESSION['w_address'];
 						if($hasClosed){
 							echo "Closed</td></tr>";
 							echo "<tr><th>Poll Result</th><td>";
-							$psql = "select poll_option from poll_options where option_id = '{$pdata['poll_result']}'";
-							$pres = mysqli_query($conn, $psql);
-							$rdata = mysqli_fetch_assoc($pres);
-							echo $rdata['poll_option'];
-							echo "</td></tr>";
+							if($pdata['poll_result'] > 0){
+								$psql = "select poll_option from poll_options where option_id = '{$pdata['poll_result']}'";
+								$pres = mysqli_query($conn, $psql);
+								$rdata = mysqli_fetch_assoc($pres);
+								echo $rdata['poll_option'];
+								echo "</td></tr>";
+							}else if($pdata['poll_result'] == -1){
+								echo "Not valid (No votes)</td></tr>";
+							}else if($pdata['poll_result'] == -2){
+								echo "Inconclusive</td></tr>";
+							}else if($pdata['poll_result'] == 0){
+								echo "Pending</td></tr>";
+							}
 						}else{
 							echo "Active</td></tr>";
 							echo "<tr><th>Poll Result</th><td>Pending</td></tr>";

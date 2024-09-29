@@ -5,6 +5,7 @@ include_once("dbconfig.php");
 $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
+$today = date("Y-m-d H:i:s");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -226,13 +227,22 @@ $walletAddress = $_SESSION['w_address'];
 						echo "<tr><th scope='row'>$rowCount</th>";
 						echo "<td>{$pdata['poll_title']}</td><td>{$pdata['start_time']} - {$pdata['end_time']}</td>";
 						$rewardPool = $pdata['incentivised'] == 1? "Yes":"No";
+						$canVote = true;
 						$pollStatus = $pdata['expired_flag'] == 1? "Closed":"Active";
+						if($today > $pdata['end_time']){
+							$canVote = false;
+							$pollStatus = "Closed";
+						}
 						echo "<td>$rewardPool</td><td>$pollStatus</td>";
 						
 						$q2 = "select reward_amt from poll_voters where poll_id = '{$pdata['poll_id']} and voter_id = '$userID'";
 						$res2 = mysqli_query($conn, $q2);
 						if(@mysqli_num_rows($res2) == 0){
-							echo "<td>Not Voted</td><td><a href='vote.php?pid={$pdata['poll_id']}'>Participate</a></td></tr>";
+							if($canVote){
+								echo "<td>Not Voted</td><td><a href='vote.php?pid={$pdata['poll_id']}'>Participate</a></td></tr>";
+							}else{
+								echo "<td>Not Voted</td><td>&nbsp;</td></tr>";
+							}
 						}else{
 							echo "<td>You've Voted</td><td>&nbsp;</td></tr>";
 						}
