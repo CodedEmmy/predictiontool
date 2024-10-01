@@ -64,8 +64,9 @@ A server bundle such as [XAMPP](https://www.apachefriends.org/) or [WAMPServer](
 
 2. Connect your Phantom Solana wallet to the DApp. If this is your first time connecting a particular Solana account, a new user account linked to the Solana account will automatically be registered on the platform.
 
-``` Note: the default network is Solana Devnet. Set your Phantom wallet network to match this or configure your preferred network in the appconstants.php file.
-```
+
+`Note: the default network is Solana Devnet. Set your Phantom wallet network to match this or configure your preferred network in the appconstants.php file.`
+
 
 3. Explore the various features of the dApp; create prediction polls, vote on available polls, earn and claim rewards, and view and monitor your activities.
 
