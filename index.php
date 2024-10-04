@@ -25,6 +25,38 @@ include_once("dbconfig.php");
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  
+  <script src="web3libs/solanaweb3.js"></script>
+  <script>
+	async function phantomLogin()
+	{
+		let walletAddr = "None";
+		let errMsg = "-";
+		const isPhantomAvailable = window.solana && window.solana.isPhantom;
+		if(isPhantomAvailable){
+			try{
+				const resp = await window.solana.connect();
+				walletAddr = resp.publicKey.toString();
+				errMsg = "Connected";
+			}catch(err){
+				errMsg = "User rejected Request";
+			}
+		}else{
+			errMsg = "Phantom wallet is not detected";
+		}
+		return {walletAddress:walletAddr, errMessage:errMsg};
+	}
+  
+	async function walletLogin()
+	{
+		const theForm = document.getElementById("loginform");
+		theForm.addEventListener("submit",(e) => {e.preventDefault();});
+		let loginResp =  await phantomLogin();
+		theForm.errmsg.value = loginResp.errMessage;
+		theForm.walletaddr.value = loginResp.walletAddress;
+		theForm.submit();
+	}
+  </script>
 </head>
 
 <body>
@@ -59,7 +91,7 @@ include_once("dbconfig.php");
 					if(isset($_POST['walletaddr'])){
 						$walletAddr = trim(mysqli_real_escape_string($conn,$_POST['walletaddr']));
 						$errormsg = trim(mysqli_real_escape_string($conn,$_POST['errmsg']));
-						if($walletAddr != "None"){
+						if($walletAddr != "None" && $walletAddr != ""){
 							$userID = "";
 							$nickname = "";
 							$sql = "select user_id, nickname from user_accounts where wallet_address = '$walletAddr'";
@@ -85,11 +117,11 @@ include_once("dbconfig.php");
 							header("location: home.php");
 						}else{
 							$loginErr = true;
+							//$errormsg = "No wallet";
 						}
 					}                
 					if($loginErr){
 						echo "<div class='pt-4 pb-2' style='color: #cc0000;text-align:center;'>$errormsg</div><hr>";
-						echo "<div class='invalid-feedback'>$errormsg</div>";
 					}
 				?>
 
@@ -98,13 +130,13 @@ include_once("dbconfig.php");
 					<input type="hidden" name="errmsg" id="errmsg">
 					
                     <div class="col-12">
-                      <label for="yourUsername" class="form-label">Web3 Login</label>
 					  <div class="input-group has-validation">
                         <img src="assets/img/login.jpg" alt="Login image">
                       </div>
                     </div>
                     <div class="col-12">
-                      <button class="btn btn-primary w-100" onclick="walletLogin()" name="loginbtn">Login/Register</button>
+                      <button class="btn btn-primary w-100" onclick="walletLogin()" id="loginbtn" name="loginbtn">Login/Register</button>
+					  <!-- <button class="btn btn-primary w-100" id="loginbtn" name="loginbtn">Login/Register</button> -->
                     </div>
                   </form>
 
@@ -112,7 +144,7 @@ include_once("dbconfig.php");
               </div>
 
               <div class="credits">
-                Phantom Solana Wallet Required
+                (Phantom Solana Wallet Required)
               </div>
 
             </div>
@@ -131,19 +163,6 @@ include_once("dbconfig.php");
   
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-  
-  <script src="web3libs/web3utils.js" type="module"></script>
-  <script>
-	function walletLogin()
-	{
-		const theForm = document.getElementById("loginform");
-		//theForm.addEventListener("submit",(e) => {e.preventDefault();});
-		let loginResp = phantomLogin();
-		theForm.errmsg.value = loginResp.errMessage;
-		theForm.walletaddr.value = loginResp.walletAddress;
-		theForm.submit();
-	}
-  </script>
 
 </body>
 

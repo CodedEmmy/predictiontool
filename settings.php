@@ -7,7 +7,7 @@ $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
 
 $formMsg = "";
-if(isset($_POST['formbtn'])){
+if(isset($_POST['nickbtn'])){
 	$nickname = trim(mysqli_real_escape_string($conn,$_POST['nname']));
 	
 	if($nickname == ""){
@@ -15,11 +15,10 @@ if(isset($_POST['formbtn'])){
 	}else{
 		$q = "update user_accounts set nickname = '$nickname' where user_id = '$userID'";
 		mysqli_query($conn, $q);
-		
 		$userName = $nickname;
 	}
 }
-if(isset($_POST['formbtn'])){
+if(isset($_POST['delbtn'])){
 	$q = "update poll_voters set voter_id = '0' where voter_id = '$userID'";
 	mysqli_query($conn, $q);
 	$q = "update polls set poll_owner = '0' where poll_owner = '$userID'";
@@ -219,10 +218,10 @@ if(isset($_POST['formbtn'])){
               <form class="row g-3" method="post" action="settings.php">
                 <div class="col-7">
                   <label for="inp" class="form-label">Nickname</label>
-                  <input type="text" class="form-control" id="inp" name="nname">
+                  <input type="text" class="form-control" id="inp" name="nname" value="<?php echo $userName; ?>">
                 </div>
                 <div class="text-center">
-                  <button type="submit" name="formbtn" class="btn btn-primary">Save</button>
+                  <button type="submit" name="nickbtn" class="btn btn-primary">Save</button>
                 </div>
               </form>
 

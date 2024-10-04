@@ -107,6 +107,42 @@ if(isset($_POST['ptitle'])){
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/zebra.css" type="text/css">
+  
+  <!-- javascript functions -->
+  <script type="text/javascript" src="assets/js/zebra_datepicker.js"></script>
+  <script src="web3libs/solanaweb3.js"></script>
+  <script src="web3libs/Base58.min.js"></script>
+  <script src="web3libs/nacl-fast.js"></script>
+  <script>
+	async function signInWallet(walletAddr, theMsg)
+	{
+		const encMessage = new TextEncoder().encode(theMsg);
+		const signedMessage = await window.solana.signMessage(walletAddr, encMessage);
+		//const signedMessage = await window.solana.signMessage(encMessage, "utf8");
+		const verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
+		if(walletAddr != signMessage.publicKey){
+			verified = false;
+		}
+		return verified;
+	}
+	
+	async function signWallet(waddr)
+	{
+		const theForm = document.getElementById("pollform");
+		theForm.addEventListener("submit",(e) => {e.preventDefault();});
+		const result = await signInWallet(waddr, "Verify your Account. This does not cost any fee.");
+		if(result){
+			theForm.submit();
+		}
+	}
+	 
+	  $(document).ready(function(){
+		$('input#pend').Zebra_DatePicker({
+			format: 'Y-m-d',
+			view: 'years'
+		});
+	  });
+	</script>
 
 </head>
 
@@ -399,26 +435,6 @@ if(isset($_POST['ptitle'])){
   
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-  <script src="web3libs/web3utils.js" type="module"></script>
-  <script type="text/javascript" src="assets/js/zebra_datepicker.js"></script>
-  <script>
-	function signWallet(waddr)
-	{
-		const theForm = document.getElementById("pollform");
-		//theForm.addEventListener("submit",(e) => {e.preventDefault();});
-		const result = signInWallet(waddr, "Verify your Account. This does not cost any fee.");
-		if(result){
-			theForm.submit();
-		}
-	}
-	 
-	  $(document).ready(function(){
-		$('input#pend').Zebra_DatePicker({
-			format: 'Y-m-d',
-			view: 'years'
-		});
-	  });
-	</script>
 
 </body>
 </html>

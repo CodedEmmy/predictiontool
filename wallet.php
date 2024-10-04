@@ -2,6 +2,7 @@
 ob_start();
 require_once("check.php");
 include_once("dbconfig.php");
+require_once("appconstants.php");
 $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
@@ -51,6 +52,49 @@ if(isset($_POST['tokenamt'])){
   <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  <!-- javascript functions  -->
+  <script src="web3libs/solanaweb3.js"></script>
+  <script src="web3libs/Base58.min.js"></script>
+  <script>
+	function getEndPoint(epUrl)
+	{
+		let url = solanaWeb3.clusterApiUrl(epUrl);
+		return url;
+	}
+  
+	async function transferToUser(userAddr, amount, privkey, endpt)
+	{
+		const connection = new solanaWeb3.Connection(getEndPoint());
+		const privateKey = new Uint8Array(Base58.decode(privkey));
+		const dappAccount = solanaWeb3.Keypair.fromSecretKey(privateKey);
+		const userWallet = new solanaWeb3.Publickey(userAddr);
+		var signTrx = "-";
+		var fnErr = "-";
+		try{
+			(async() =>{
+				const transaction = new solanaWeb3.Transaction();
+				transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: dappAccount.publicKey, toPubkey: UserWallet, lamports: amount}));
+				signature = await solanaWeb3.sendAndConfirmTransaction(connection, transaction,[dappAccount],);
+				signTrx = signature.signature;
+				fnErr = "Confirmed";
+			})();
+		}catch(err){
+			signTrx = "-";
+			fnErr = err;
+		}
+		return {trxID: signTrx, errMessage: fnErr};
+	}
+	
+	async function rewardClaim(waddr,claimAmt,pkey,endpt)
+	{
+		const theForm = document.getElementById("claimform");
+		theForm.addEventListener("submit",(e) => {e.preventDefault();});
+		const result = await transferToUser(waddr, claimAmt, pkey, endpt);
+		theForm.trxid.value = result.trxID;
+		theForm.errmsg.value = result.errMessage;
+		theForm.submit();
+	}
+  </script>
 
 </head>
 
@@ -223,14 +267,15 @@ if(isset($_POST['tokenamt'])){
 						<?php
 						$amtInSol = $pdata['current_amt']/$LAMPS_PER_SOL;
 						echo "<h6>$amtInSol</h6>";
+						$minAmt = $MIN_WITHDRAW/$LAMPS_PER_SOL;
 						?>
-						<span class="text-danger small pt-1 fw-bold"><?php echo $MIN_WITHDRAW; ?></span>
+						<span class="text-danger small pt-1 fw-bold"><?php echo "Minimum Withdrawal : $minAmt SOL"; ?></span>
                     </div>
                 </div>
             </div>
           </div>
         </div>
-		<div class="col-lg-5">
+		<div class="col-lg-4">
           <div class="card info-card customers-card">
             <div class="card-body">
 				<h5 class="card-title">Balance <span>| Withdrawn</span></h5>
@@ -249,7 +294,7 @@ if(isset($_POST['tokenamt'])){
           </div>
         </div>
 		
-		<div class="col-lg-2">
+		<div class="col-lg-3">
           <div class="card info-card customers-card">
             <div class="card-body">
 				<h5 class="card-title">Wallet <span>| In/Out</span></h5>
@@ -338,18 +383,6 @@ if(isset($_POST['tokenamt'])){
   
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-  <script src="web3libs/web3utils.js" type="module"></script>
-  <script>
-	function rewardClaim(waddr,claimAmt,pkey,endpt)
-	{
-		const theForm = document.getElementById("claimform");
-		//theForm.addEventListener("submit",(e) => {e.preventDefault();});
-		const result = transferToUser(waddr, claimAmt, pkey, endpt);
-		theForm.trxid.value = result.trxID;
-		theForm.errmsg.value = result.errMessage;
-		theForm.submit();
-	}
-  </script>
 
 </body>
 </html>

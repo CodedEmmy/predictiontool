@@ -57,6 +57,34 @@ if(isset($_POST['pollid'])){
   <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  
+  <!-- javascript functions -->
+  <script src="web3libs/solanaweb3.js"></script>
+  <script src="web3libs/Base58.min.js"></script>
+  <script src="web3libs/nacl-fast.js"></script>
+  <script>
+	async function signInWallet(walletAddr, theMsg)
+	{
+		const encMessage = new TextEncoder().encode(theMsg);
+		const signedMessage = await window.solana.signMessage(walletAddr, encMessage);
+		//const signedMessage = await window.solana.signMessage(encMessage, "utf8");
+		const verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
+		if(walletAddr != signMessage.publicKey){
+			verified = false;
+		}
+		return verified;
+	}
+	
+	async function signWallet(waddr)
+	{
+		const theForm = document.getElementById("voteform");
+		theForm.addEventListener("submit",(e) => {e.preventDefault();});
+		const result = await signInWallet(waddr, "Verify your Vote. This does not cost any fee.");
+		if(result){
+			theForm.submit();
+		}
+	}
+  </script>
 
 </head>
 
@@ -291,19 +319,6 @@ if(isset($_POST['pollid'])){
   
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-  
-  <script src="web3libs/web3utils.js" type="module"></script>
-  <script>
-	function signWallet(waddr)
-	{
-		const theForm = document.getElementById("voteform");
-		//theForm.addEventListener("submit",(e) => {e.preventDefault();});
-		const result = signInWallet(waddr, "Verify your Vote. This does not cost any fee.");
-		if(result){
-			theForm.submit();
-		}
-	}
-  </script>
 
 </body>
 </html>

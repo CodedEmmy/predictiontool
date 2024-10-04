@@ -65,6 +65,57 @@ if(isset($_POST['trxid'])){
   <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  
+  <!-- javascript functions -->
+  <script src="web3libs/solanaweb3.js"></script>
+  <script src="web3libs/Base58.min.js"></script>
+  <script>
+	function getEndPoint(epUrl)
+	{
+		let url = web3.clusterApiUrl(epUrl);
+		return url;
+	}
+
+	async function transferFromUser(dappAddr, userAddr, amount, endpt)
+	{
+		let txid = "-";
+		let fnMsg = "-";
+		const phantom = window.solana;
+		if(!phantom){
+			fnMsg = "Phantom Wallet not detected";
+		}else{
+			const userWallet = await phantom.publicKey;
+			if(userAddr != userWallet.publicKey){
+				fnMsg = "Wallet mismatch: Ensure that you are connected to " + userAddr;
+			}else{
+				var connection = new solanaWeb3.Connection(getEndPoint(endpt),"confirmed");
+				var dappWallet = new solanaWeb3.Publickey(dappAddr);
+				let transaction = new solanaWeb3.Transaction().add(solanaWeb3.SystemProgram.transfer({fromPubkey: userWallet, toPubkey: dappWallet, lamports: amount}));
+				transaction.feePayer = userWallet;
+				let blockhashObj = await connection.getRecentBlockhash();
+				transaction.recentBlockhash = blockhashObj.blockhash;
+				try{
+					let signature = await phantom.signAndSendTransaction(transaction);
+					await connection.confirmTransaction(signature.signature);
+					txid = signature.signature;
+				}catch(err){
+					fnMsg = "Error: " + err;
+				}
+			}
+		}
+		return {trx_id: txid, trx_status: fnMsg};
+	}
+  
+	async function tokenDeposit(dAddr,uAddr,depAmt,endpt)
+	{
+		const theForm = document.getElementById("depform");
+		theForm.addEventListener("submit",(e) => {e.preventDefault();});
+		const result = await transferFromUser(dAddr, uAddr, depAmt, endpt);
+		theForm.trxid.value = result.trx_id;
+		theForm.errmsg.value = result.trx_status;
+		theForm.submit();
+	}
+  </script>
 
 </head>
 
@@ -303,18 +354,6 @@ if(isset($_POST['trxid'])){
   
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-  <script src="web3libs/web3utils.js" type="module"></script>
-  <script>
-	function tokenDeposit(dAddr,uAddr,depAmt,endpt)
-	{
-		const theForm = document.getElementById("depform");
-		//theForm.addEventListener("submit",(e) => {e.preventDefault();});
-		const result = transferFromUser(dAddr, uAddr, depAmt, endpt);
-		theForm.trxid.value = result.trx_id;
-		theForm.errmsg.value = result.trx_status;
-		theForm.submit();
-	}
-  </script>
 
 </body>
 </html>

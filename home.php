@@ -1,6 +1,7 @@
 <?php
 ob_start();
 require_once("check.php");
+require_once("appconstants.php");
 include_once("dbconfig.php");
 $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
