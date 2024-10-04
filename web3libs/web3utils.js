@@ -1,10 +1,10 @@
+//This file is no longer used due to module scope complications. Left here for future reference
 //imports
-import nacl from './nacl-fast.js';
-import * as web3 from './solanaweb3.js';
-import * from './Base58.min.js';
+import nacl from "./nacl-fast.js";
+import Base58 from "./Base58.min.js";
+import * as web3 from "./solanaweb3.js";
 
-
-async function phantomLogin()
+function phantomLogin()
 {
 	let walletAddr = "None";
 	let errMsg = "-";
