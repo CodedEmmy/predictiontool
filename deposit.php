@@ -2,6 +2,7 @@
 ob_start();
 require_once("check.php");
 include_once("dbconfig.php");
+require_once("appconstants.php");
 $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
@@ -11,11 +12,13 @@ $showForm1 = true;
 $formMsg = "";
 if(isset($_POST['form1btn'])){
 	$amtToDeposit = trim(mysqli_real_escape_string($conn,$_POST['tokenamt']));
-	
+	$minDeposit = $MIN_DEPOSIT/$LAMPS_PER_SOL;
 	if($amtToDeposit == ""){
 		$formMsg = "All fields are required!";
-	}else if(!is_numeric($amtToDeposit){
-		$formMsg = "Value must be numeric!";
+	}else if(!is_numeric($amtToDeposit)){
+		$formMsg = "Deposit amount must be a numeric value!";
+	}else if($amtToDeposit < $minDeposit){
+		$formMsg = "Deposit amount must be greater or equal to $minDeposit SOL!";
 	}else{
 		$showForm1 = false;
 	}
@@ -61,45 +64,70 @@ if(isset($_POST['trxid'])){
   <!-- Vendor CSS Files -->
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
   
   <!-- javascript functions -->
+  <script src="web3libs/buffer603.js"></script>
   <script src="web3libs/solanaweb3.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
 	function getEndPoint(epUrl)
 	{
-		let url = web3.clusterApiUrl(epUrl);
+		let url = solanaWeb3.clusterApiUrl(epUrl);
 		return url;
 	}
 
 	async function transferFromUser(dappAddr, userAddr, amount, endpt)
-	{
+	{	
 		let txid = "-";
 		let fnMsg = "-";
 		const phantom = window.solana;
 		if(!phantom){
 			fnMsg = "Phantom Wallet not detected";
 		}else{
-			const userWallet = await phantom.publicKey;
-			if(userAddr != userWallet.publicKey){
-				fnMsg = "Wallet mismatch: Ensure that you are connected to " + userAddr;
-			}else{
-				var connection = new solanaWeb3.Connection(getEndPoint(endpt),"confirmed");
-				var dappWallet = new solanaWeb3.Publickey(dappAddr);
-				let transaction = new solanaWeb3.Transaction().add(solanaWeb3.SystemProgram.transfer({fromPubkey: userWallet, toPubkey: dappWallet, lamports: amount}));
-				transaction.feePayer = userWallet;
-				let blockhashObj = await connection.getRecentBlockhash();
-				transaction.recentBlockhash = blockhashObj.blockhash;
-				try{
-					let signature = await phantom.signAndSendTransaction(transaction);
-					await connection.confirmTransaction(signature.signature);
-					txid = signature.signature;
-				}catch(err){
-					fnMsg = "Error: " + err;
+			let userWallet = "";
+			let doTrx = false;
+			try{
+				const resp = await phantom.connect();
+				userWallet = resp.publicKey;
+				doTrx = true;
+			}catch(err){
+				fnMsg = "User rejected the request";
+				doTrx = false;
+			}
+			if(doTrx){
+				if(userAddr != userWallet.toString()){
+					fnMsg = "Wallet mismatch: Ensure that you are connected to " + userAddr;
+				}else{
+					try{
+						var connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
+						var dappWallet = new solanaWeb3.PublicKey(dappAddr);
+						let transaction = new solanaWeb3.Transaction();
+						
+						alert("Debug: After create transaction");
+						
+						transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: userWallet, toPubkey: dappWallet, lamports: amount,}),);
+						
+						alert("Debug: After transaction Add");
+						
+						transaction.feePayer = userWallet;
+						
+						alert("Debug: After set payer");
+						
+						let blockhashObj = await connection.getRecentBlockhash();
+						
+						alert("Debug: After blockhash get");
+						
+						transaction.recentBlockhash = blockhashObj.blockhash;
+						let signature = await phantom.signAndSendTransaction(transaction);
+						await connection.confirmTransaction(signature.signature);
+						txid = signature.signature;
+					}catch(err){
+						fnMsg = "Error: " + err;
+						alert("Debug: deposit fn 2" + err);
+					}
 				}
 			}
 		}
@@ -111,6 +139,9 @@ if(isset($_POST['trxid'])){
 		const theForm = document.getElementById("depform");
 		theForm.addEventListener("submit",(e) => {e.preventDefault();});
 		const result = await transferFromUser(dAddr, uAddr, depAmt, endpt);
+		
+		alert("Debug: deposit fn 1: after result");
+		
 		theForm.trxid.value = result.trx_id;
 		theForm.errmsg.value = result.trx_status;
 		theForm.submit();
@@ -273,7 +304,9 @@ if(isset($_POST['trxid'])){
 			<div class="col-lg-12">
 				<div class="card">
 					<div class="card-body">
-					  <h5 class="card-title"><?php echo $formMsg; ?></h5>
+					  <h5 class="card-title"><span style="color:#600"><?php echo $formMsg; ?></span></h5>
+					  <?php $dFee = $MIN_DEPOSIT/$LAMPS_PER_SOL; ?>
+					  <p>Minimum Deposit Amount: <?php echo $dFee; ?> SOL</p>
 					</div>
 				</div>
 			</div>
@@ -284,7 +317,7 @@ if(isset($_POST['trxid'])){
 	?>
 		<section class="section">
 			<div class="row">
-				<div class="col-lg-6">
+				<div class="col-lg-12">
 				  <div class="card info-card customers-card">
 					<div class="card-body">
 						<h5 class="card-title">Wallet <span>| Deposit</span></h5>
@@ -293,8 +326,8 @@ if(isset($_POST['trxid'])){
 								<div class="text-center"><br></div>
 								<form method="post" action="deposit.php">
 									<div class="row mb-3">
-									  <label for="input2" class="col-sm-2 col-form-label">Amount to Deposit (In SOL)</label>
-									  <div class="col-sm-10">
+									  <label for="input2" class="col-sm-6 col-form-label">Amount to Deposit (In SOL)</label>
+									  <div class="col-sm-6">
 										<input type="text" class="form-control" id="input2" name="tokenamt" value="<?php echo $amtToDeposit; ?>">
 									  </div>
 									</div>
@@ -315,10 +348,10 @@ if(isset($_POST['trxid'])){
 		<section class="section">
 		  <div class="row">
 			
-			<div class="col-lg-6">
+			<div class="col-lg-12">
 			  <div class="card info-card customers-card">
 				<div class="card-body">
-					<h5 class="card-title">Wallet <span>| Confirm Deposit</span></h5>
+					<h5 class="card-title">Wallet <span> | Confirm Deposit</span></h5>
 					<div class="d-flex align-items-center">
 						<div class="ps-3">
 							<form method="post" action="deposit.php" id="depform">
@@ -329,6 +362,14 @@ if(isset($_POST['trxid'])){
 								<input type="hidden" name="tokenamt" value="<?php echo $amtInLamp; ?>">
 								<input type="hidden" name="trxid" value="-">
 								<input type="hidden" name="errmsg" value="-">
+								
+								<div class="row mb-3">
+								  <label for="input2" class="col-sm-6 col-form-label">Amount to Deposit (In SOL)</label>
+								  <div class="col-sm-6">
+									<input type="text" class="form-control" value="<?php echo $amtToDeposit; ?>" disabled>
+								  </div>
+								</div>
+								
 								<div class="text-center">
 									<button onclick="tokenDeposit(<?php echo $fnParams; ?>)" class="btn btn-primary" name="formbtn">Deposit</button>
 								</div>

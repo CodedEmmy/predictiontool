@@ -48,23 +48,17 @@ if(isset($_POST['tokenamt'])){
   <!-- Vendor CSS Files -->
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
   <!-- javascript functions  -->
   <script src="web3libs/solanaweb3.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
-	function getEndPoint(epUrl)
-	{
-		let url = solanaWeb3.clusterApiUrl(epUrl);
-		return url;
-	}
-  
 	async function transferToUser(userAddr, amount, privkey, endpt)
 	{
-		const connection = new solanaWeb3.Connection(getEndPoint());
+		//const connection = new solanaWeb3.Connection(getEndPoint());
+		const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
 		const privateKey = new Uint8Array(Base58.decode(privkey));
 		const dappAccount = solanaWeb3.Keypair.fromSecretKey(privateKey);
 		const userWallet = new solanaWeb3.Publickey(userAddr);
@@ -335,7 +329,13 @@ if(isset($_POST['tokenamt'])){
 		<div class="col-lg-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Wallet History</h5>
+				<?php
+				$vc = "select count(*) from wallet_history where user_id = '$userID'";
+				$vres = mysqli_query($conn, $vc);
+				$vdata = mysqli_fetch_row($vres);
+				$trxCount = $vdata[0];
+				?>
+              <h5 class="card-title">Wallet History (<?php echo $trxCount; ?>)</h5>
               
               <table class="table">
                 <thead>
