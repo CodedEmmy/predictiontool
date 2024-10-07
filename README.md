@@ -49,7 +49,7 @@ A server bundle such as [XAMPP](https://www.apachefriends.org/) or [WAMPServer](
 
 2. Copy the 'crowdwise' folder from the 'dist' folder to the your web server's http/web folder.
 
-3. Setup the database by importing the 'crowdtool.sql' file into your mySql database. You can accomplish this easily by using a tool like phpMyAdmin.
+3. Setup the database by importing the 'crowdtool_db.sql' file into your mySql database. You can accomplish this easily by using a tool like phpMyAdmin.
 
 4. Configure the database settings: if you are not using the default database settings then go to the crowdwise folder in your web server, open the dbconfig.php file in an editor and change the database connecton paramaters to match your setup. 
 
