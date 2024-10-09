@@ -70,7 +70,8 @@ if(isset($_POST['trxid'])){
   
   <!-- javascript functions -->
   <script src="web3libs/buffer603.js"></script>
-  <script src="web3libs/solanaweb3.js"></script>
+  <!-- <script src="web3libs/solanaweb3.js"></script> -->
+  <script src="web3libs/solanaweb3v1_30_2.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
 	function getEndPoint(epUrl)
@@ -105,27 +106,22 @@ if(isset($_POST['trxid'])){
 						var connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
 						var dappWallet = new solanaWeb3.PublicKey(dappAddr);
 						let transaction = new solanaWeb3.Transaction();
-						
-						alert("Debug: After create transaction");
-						
 						transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: userWallet, toPubkey: dappWallet, lamports: amount,}),);
-						
-						alert("Debug: After transaction Add");
-						
 						transaction.feePayer = userWallet;
-						
-						alert("Debug: After set payer");
-						
-						let blockhashObj = await connection.getRecentBlockhash();
+						//let blockhashObj = await connection.getRecentBlockhash();
+						let blockhashObj = await connection.getLatestBlockhash();
 						
 						alert("Debug: After blockhash get");
 						
 						transaction.recentBlockhash = blockhashObj.blockhash;
+						
+						alert("Debug: After set blockhash to trx");
+						
 						let signature = await phantom.signAndSendTransaction(transaction);
 						await connection.confirmTransaction(signature.signature);
 						txid = signature.signature;
 					}catch(err){
-						fnMsg = "Error: " + err;
+						fnMsg = err;
 						alert("Debug: deposit fn 2" + err);
 					}
 				}
