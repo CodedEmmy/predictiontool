@@ -69,17 +69,11 @@ if(isset($_POST['trxid'])){
   <link href="assets/css/style.css" rel="stylesheet">
   
   <!-- javascript functions -->
-  <script src="web3libs/buffer603.js"></script>
   <!-- <script src="web3libs/solanaweb3.js"></script> -->
+  <!-- fall back to version 1.30.2 to avoid buffer error -->
   <script src="web3libs/solanaweb3v1_30_2.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
-	function getEndPoint(epUrl)
-	{
-		let url = solanaWeb3.clusterApiUrl(epUrl);
-		return url;
-	}
-
 	async function transferFromUser(dappAddr, userAddr, amount, endpt)
 	{	
 		let txid = "-";
@@ -102,26 +96,31 @@ if(isset($_POST['trxid'])){
 				if(userAddr != userWallet.toString()){
 					fnMsg = "Wallet mismatch: Ensure that you are connected to " + userAddr;
 				}else{
+					let blockhashObj = NULL;
 					try{
-						var connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
+						//var connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
+						var connection = new solanaWeb3.Connection(endpt, "confirmed",);
 						var dappWallet = new solanaWeb3.PublicKey(dappAddr);
 						let transaction = new solanaWeb3.Transaction();
 						transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: userWallet, toPubkey: dappWallet, lamports: amount,}),);
 						transaction.feePayer = userWallet;
-						//let blockhashObj = await connection.getRecentBlockhash();
-						let blockhashObj = await connection.getLatestBlockhash();
 						
-						alert("Debug: After blockhash get");
-						
+						blockhashObj = await connection.getRecentBlockhash();
+						//blockhashObj = await connection.getLatestBlockhash();
 						transaction.recentBlockhash = blockhashObj.blockhash;
 						
-						alert("Debug: After set blockhash to trx");
-						
 						let signature = await phantom.signAndSendTransaction(transaction);
-						await connection.confirmTransaction(signature.signature);
 						txid = signature.signature;
 					}catch(err){
 						fnMsg = err;
+					}
+					if(fnMsg == "-"){
+						//await connection.confirmTransaction(signature.signature);
+						await connection.confirmTransaction({blockhash: blockhashObj.blockhash, lastValidBlockHeight: blockhashObj.lastValidBlockHeight, signature: txid,});
+						fnMsg = "Confirmed";
+					}catch(err){
+						fnMsg = err;
+						txid = "-";
 						alert("Debug: deposit fn 2" + err);
 					}
 				}

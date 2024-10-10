@@ -57,8 +57,8 @@ if(isset($_POST['tokenamt'])){
   <script>
 	async function transferToUser(userAddr, amount, privkey, endpt)
 	{
-		//const connection = new solanaWeb3.Connection(getEndPoint());
-		const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
+		//const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
+		var connection = new solanaWeb3.Connection(endpt, "confirmed",);
 		const privateKey = new Uint8Array(Base58.decode(privkey));
 		const dappAccount = solanaWeb3.Keypair.fromSecretKey(privateKey);
 		const userWallet = new solanaWeb3.Publickey(userAddr);
@@ -260,7 +260,7 @@ if(isset($_POST['tokenamt'])){
                     <div class="ps-3">
 						<?php
 						$amtInSol = $pdata['current_amt']/$LAMPS_PER_SOL;
-						echo "<h6>$amtInSol</h6>";
+						echo "<h5>$amtInSol SOL</h5>";
 						$minAmt = $MIN_WITHDRAW/$LAMPS_PER_SOL;
 						?>
 						<span class="text-danger small pt-1 fw-bold"><?php echo "Minimum Withdrawal : $minAmt SOL"; ?></span>
@@ -280,7 +280,7 @@ if(isset($_POST['tokenamt'])){
                     <div class="ps-3">
 						<?php
 						$amtInSol = $pdata['withdrawn_amt']/$LAMPS_PER_SOL;
-						echo "<h6>$amtInSol</h6>";
+						echo "<h5>$amtInSol SOL</h5>";
 						?>
                     </div>
                 </div>
