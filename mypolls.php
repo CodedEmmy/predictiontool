@@ -223,7 +223,12 @@ $walletAddress = $_SESSION['w_address'];
         <div class="col-lg-7">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">My Created Polls</h5>
+				<?php
+				$sql = "select count(*) from polls where poll_owner = '$userID'";
+				$cres = mysqli_query($conn, $sql);
+				$cdata = mysqli_fetch_row($cres);
+				?>
+              <h5 class="card-title">My Created Polls (<?php echo "{$cdata[0]}"; ?>)</h5>
               
               <table class="table">
                 <thead>

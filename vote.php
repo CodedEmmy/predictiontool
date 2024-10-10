@@ -2,6 +2,7 @@
 ob_start();
 require_once("check.php");
 include_once("dbconfig.php");
+require_once("appconstants.php");
 $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
@@ -11,7 +12,7 @@ $formMsg = "";
 $showForm = false;
 if(isset($_GET['pid'])){
 	$pollID = trim(mysqli_real_escape_string($conn,$_GET['pid']));
-	$q = "select vote_date from poll_voters where poll_id = '$PollID' and voter_id = '$userID'";
+	$q = "select vote_date from poll_voters where poll_id = '$pollID' and voter_id = '$userID'";
 	$res = mysqli_query($conn, $q);
 	if(@mysqli_num_rows($res) == 0){
 		$showForm = true;
@@ -256,18 +257,18 @@ if(isset($_POST['pollid'])){
 
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title"><?php echo $pdata['poll_title']; ?></h5>
+              <h5 class="card-title">Topic: <?php echo $pdata['poll_title']; ?></h5>
 			  <span style="color:#036"><?php echo $formMsg; ?></span><br><br>
 
               <form method="post" action="vote.php" id="voteform">
 				<div class="row mb-3">
-                  <label class="col-sm-2 col-form-label">Reward Pool: <?php  echo ($pdata['incentive_pool']/1000000000); echo " SOL"; ?></label>
+                  <label class="col-sm-12 col-form-label"><strong>Reward Pool:</strong> <?php  echo ($pdata['incentive_pool']/$LAMPS_PER_SOL); echo " SOL"; ?></label>
                 </div>
                 <input type="hidden" name="pollid" value="<?php echo $pollID; ?>">
 				<input type="hidden" name="rewarddate" value="<?php echo $$pdata['end_time']; ?>">
 				<fieldset class="row mb-3">
-				  <legend class="col-form-label col-sm-2 pt-0">Options</legend>
-				  <div class="col-sm-10">
+				  <legend class="col-form-label col-sm-3 pt-0"><strong>Topic Options<strong></legend>
+				  <div class="col-sm-9">
 				<?php
 				$opts = "select poll_option,option_id from poll_options where poll_id = '$pollID'";
 				$optsRes = mysqli_query($conn, $opts);

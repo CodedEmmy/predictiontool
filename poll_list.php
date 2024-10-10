@@ -241,7 +241,7 @@ $today = date("Y-m-d H:i:s");
 						}
 						echo "<td>$rewardPool</td><td>$pollStatus</td>";
 						if($pollOwner){
-							echo "<td>Can't vote </td><td>&nbsp;</td></tr>";
+							echo "<td>Can't vote<br>(Poll Owner) </td><td>&nbsp;</td></tr>";
 						}else{
 							$q2 = "select reward_amt from poll_voters where poll_id = '{$pdata['poll_id']}' and voter_id = '$userID'";
 							$res2 = mysqli_query($conn, $q2);
