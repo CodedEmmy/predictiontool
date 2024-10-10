@@ -17,20 +17,27 @@ if(isset($_GET['pid'])){
 	if(@mysqli_num_rows($res) == 0){
 		$showForm = true;
 	}else{
-		$formMsg = "Already voted for this poll";
+		$formMsg = "You have already voted for this poll.<br>Check for other avaialble polls";
 	}
 }
 if(isset($_POST['pollid'])){
 	$pollID = trim(mysqli_real_escape_string($conn,$_POST['pollid']));
 	$rewDate = trim(mysqli_real_escape_string($conn,$_POST['rewarddate']));
 	$selOption = trim(mysqli_real_escape_string($conn,$_POST['poption']));
+	$pollTitle = trim(mysqli_real_escape_string($conn,$_POST['polltitle']));
 
-	$sql = "update poll_options set vote_count = vote_count + 1 where option_id = '$selOption' and poll_id = '$pollID'";
-	mysqli_query($conn, $sql);
-	$voteDate = date("Y-m-d H:i:s");
-	$sql = "insert into poll_voters(poll_id, voter_id, reward_amt, reward_date, vote_date) values('$pollID', '$userID', '0', '$rewDate', '$voteDate')";
-	mysqli_query($conn, $sql);
-	$formMsg = "Your vote has been registered";
+	$q = "select vote_date from poll_voters where poll_id = '$pollID' and voter_id = '$userID'";
+	$res = mysqli_query($conn, $q);
+	if(@mysqli_num_rows($res) == 0){
+		$sql = "update poll_options set vote_count = vote_count + 1 where option_id = '$selOption' and poll_id = '$pollID'";
+		mysqli_query($conn, $sql);
+		$voteDate = date("Y-m-d H:i:s");
+		$sql = "insert into poll_voters(poll_id, voter_id, reward_amt, reward_date, vote_date) values('$pollID', '$userID', '0', '$rewDate', '$voteDate')";
+		mysqli_query($conn, $sql);
+		$formMsg = "Thank you!<br>Your choice for <strong>'$pollTitle'</strong> has been registered<br>You can still participate in other decision polls";
+	}else{
+		$formMsg = "<strong>($pollTitle)</strong><br>You have already voted in this poll.<br>Check for other available polls";
+	}
 }
 ?>
 <!DOCTYPE html>
@@ -265,9 +272,11 @@ if(isset($_POST['pollid'])){
                   <label class="col-sm-12 col-form-label"><strong>Reward Pool:</strong> <?php  echo ($pdata['incentive_pool']/$LAMPS_PER_SOL); echo " SOL"; ?></label>
                 </div>
                 <input type="hidden" name="pollid" value="<?php echo $pollID; ?>">
-				<input type="hidden" name="rewarddate" value="<?php echo $$pdata['end_time']; ?>">
+				<input type="hidden" name="rewarddate" value="<?php echo $pdata['end_time']; ?>">
+				<input type="hidden" name="polltitle" value="<?php echo $pdata['poll_title']; ?>">
+				
 				<fieldset class="row mb-3">
-				  <legend class="col-form-label col-sm-3 pt-0"><strong>Topic Options<strong></legend>
+				  <legend class="col-form-label col-sm-3 pt-0"><strong>Topic Options</strong></legend>
 				  <div class="col-sm-9">
 				<?php
 				$opts = "select poll_option,option_id from poll_options where poll_id = '$pollID'";
@@ -306,7 +315,7 @@ if(isset($_POST['pollid'])){
                       <i class="bi bi-file-earmark-check"></i>
                     </div>
                     <div class="ps-3">
-						<?php echo $formMsg;?>
+						<h5><?php echo $formMsg;?></h5>
                     </div>
                 </div>
             </div>

@@ -201,7 +201,7 @@ $walletAddress = $_SESSION['w_address'];
               
               <table class="table">
                 <thead>
-                  <tr><th scope="col">Sn</th><th scope="col">Poll Title</th><th scope="col">Vote Date</th><th scope="col">Reward (If Any)</th><th scope="col">Reward Date</th><th scope="col">Poll Status</th><th scope="col">Poll Result</th></tr>
+                  <tr><th scope="col">Sn</th><th scope="col">Decision Poll Topic</th><th scope="col">Vote Date</th><th scope="col">Reward<br>(If Any)</th><th scope="col">Reward Date</th><th scope="col">Poll Status</th><th scope="col">Poll Result</th></tr>
                 </thead>
                 <tbody>
 					<?php
@@ -211,24 +211,58 @@ $walletAddress = $_SESSION['w_address'];
 					while($pdata = mysqli_fetch_assoc($res)){
 						$usql = "select poll_title, incentivised, result_access, poll_result, expired_flag, poll_option from polls p, poll_options po where p.poll_id = '{$pdata['poll_id']}' and p.poll_result = po.option_id";
 						$ures = mysqli_query($conn, $usql);
-						$sdata = mysqli_fetch_assoc($ures);
-						
-						echo "<tr><th scope='row'>$rowCount</th>";
-						echo "<td>{$sdata['poll_title']}</td><td>{$pdata['vote_date']}</td>";
-						if($sdata['incentivised'] == 1){
-							$rewardAmt = $pdata['reward_amt']/$LAMPS_PER_SOL;
-							echo "<td>$rewardAmt SOL</td><td>{$pdata['reward_date']}</td>";
-						}else{
-							echo "<td>None</td><td>N/A</td>";
-						}
-						if($sdata['expired_flag'] == 1){
-							$pollResult = "No Access";
-							if($sdata['result_access'] == "Public"){
-								$pollResult = $sdata['poll_option'];
+						if(@mysqli_num_rows($ures) != 0){
+							$sdata = mysqli_fetch_assoc($ures);
+							
+							echo "<tr><th scope='row'>$rowCount</th>";
+							echo "<td>{$sdata['poll_title']}</td><td>{$pdata['vote_date']}</td>";
+							if($sdata['incentivised'] == 1){
+								if($sdata['expired_flag'] == 1){
+									$rewardAmt = $pdata['reward_amt']/$LAMPS_PER_SOL;
+									echo "<td>$rewardAmt SOL</td>";
+								}else{
+									echo "<td>Pending</td>";
+								}
+								echo "<td>{$pdata['reward_date']}</td>";
+							}else{
+								echo "<td>None</td><td>N/A</td>";
 							}
-							echo "<td>Closed</td><td>$pollResult</td></tr>";
+							if($sdata['expired_flag'] == 1){
+								$pollResult = "No Access";
+								if($sdata['result_access'] == "Public"){
+									$pollResult = $sdata['poll_option'];
+								}
+								echo "<td>Closed</td><td>$pollResult</td></tr>";
+							}else{
+								echo "<td>Active</td><td>Pending</td></tr>";
+							}
 						}else{
-							echo "<td>Active</td><td>Pending</td></tr>";
+							$asql = "select poll_title, incentivised, result_access, poll_result, expired_flag from polls where poll_id = '{$pdata['poll_id']}'";
+							$ares = mysqli_query($conn, $asql);
+							$sdata = mysqli_fetch_assoc($ares);
+							
+							echo "<tr><th scope='row'>$rowCount</th>";
+							echo "<td>{$sdata['poll_title']}</td><td>{$pdata['vote_date']}</td>";
+							if($sdata['incentivised'] == 1){
+								if($sdata['expired_flag'] == 1){
+									$rewardAmt = $pdata['reward_amt']/$LAMPS_PER_SOL;
+									echo "<td>$rewardAmt SOL</td>";
+								}else{
+									echo "<td>Pending</td>";
+								}
+								echo "<td>{$pdata['reward_date']}</td>";
+							}else{
+								echo "<td>None</td><td>N/A</td>";
+							}
+							if($sdata['expired_flag'] == 1){
+								$pollResult = "Private Access";
+								if($sdata['result_access'] == "Public"){
+									$pollResult = "Pending";
+								}
+								echo "<td>Closed</td><td>$pollResult</td></tr>";
+							}else{
+								echo "<td>Active</td><td>Pending</td></tr>";
+							}
 						}
 						$rowCount++;
 					}
