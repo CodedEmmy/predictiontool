@@ -231,7 +231,7 @@ $today = date("Y-m-d H:i:s");
 						echo "<tr><th scope='row'>";
 						if($pollOwner){ echo "* "; }
 						echo "$rowCount</th>";
-						echo "<td>{$pdata['poll_title']}</td><td>{$pdata['start_time']} - {$pdata['end_time']}</td>";
+						echo "<td>{$pdata['poll_title']}</td><td>{$pdata['start_time']} - <br>{$pdata['end_time']}</td>";
 						$rewardPool = $pdata['incentivised'] == 1? "Yes":"No";
 						$canVote = true;
 						$pollStatus = $pdata['expired_flag'] == 1? "Closed":"Active";
