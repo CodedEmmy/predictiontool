@@ -41,7 +41,7 @@ $walletAddress = $_SESSION['w_address'];
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="index.html" class="logo d-flex align-items-center">
+      <a href="index.php" class="logo d-flex align-items-center">
         <img src="assets/img/logo.png" alt="">
         <span class="d-none d-lg-block">CrowdWise</span>
       </a>
@@ -191,7 +191,13 @@ $walletAddress = $_SESSION['w_address'];
 		<div class="col-lg-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Voted Polls</h5>
+			<?php
+				$vc = "select count(*) from poll_voters where voter_id = '$userID'";
+				$vres = mysqli_query($conn, $vc);
+				$vdata = mysqli_fetch_row($vres);
+				$pollCount = $vdata[0];
+			?>
+              <h5 class="card-title">Voted Polls (<?php echo $pollCount; ?>)</h5>
               
               <table class="table">
                 <thead>
@@ -218,7 +224,7 @@ $walletAddress = $_SESSION['w_address'];
 						if($sdata['expired_flag'] == 1){
 							$pollResult = "No Access";
 							if($sdata['result_access'] == "Public"){
-								$pollResult = {$sdata['poll_option']}
+								$pollResult = $sdata['poll_option'];
 							}
 							echo "<td>Closed</td><td>$pollResult</td></tr>";
 						}else{

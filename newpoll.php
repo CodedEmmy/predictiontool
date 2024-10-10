@@ -2,6 +2,7 @@
 ob_start();
 require_once("check.php");
 include_once("dbconfig.php");
+require_once("appconstants.php");
 $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
@@ -11,10 +12,9 @@ $noOfOptions = 2;
 $formMsg = "";
 if(isset($_POST['form1btn'])){
 	$noOfOptions = trim(mysqli_real_escape_string($conn,$_POST['optcount']));
-	
 	if($noOfOptions == ""){
 		$formMsg = "All fields are required!";
-	}else if(!is_numeric($noOfOptions){
+	}else if(!is_numeric($noOfOptions)){
 		$formMsg = "Value must be numeric!";
 	}else{
 		$showForm1 = false;
@@ -40,19 +40,24 @@ if(isset($_POST['ptitle'])){
 		$missingOption = true;
 	}
 	if($pReward == 1){
+		$minIncentive = $MIN_INCENTIVE/$LAMPS_PER_SOL;
 		if($pAmount == "" ){
 			$missingOption = true;
-		}else if(!is_numeric($pAmount){
+		}else if(!is_numeric($pAmount)){
 			$formMsg = "Incentive Amount must be numeric!";
+			$missingOption = true;
+		}else if($pAmount < $minIncentive){
+			$formMsg = "Incentive Amount must be greater or equal to $minIncentive SOL!";
 			$missingOption = true;
 		}
 	}else{
 		$pAmount = 0;
 	}
 	if($missingOption){
-		$formMsg = $formMsg." All fields are required.";
+		$formMsg = $formMsg."<br>All fields are required.";
 	}else{
-		$totalFee = $pAmount + $POLL_FEE;
+		$incentiveAmt = $pAmount * $LAMPS_PER_SOL;
+		$totalFee = $incentiveAmt + $POLL_FEE;
 		$sql = "select current_amt from user_accounts where user_id = '$userID'";
 		$res = mysqli_query($conn, $sql);
 		$odata = mysqli_fetch_assoc($res);
@@ -64,7 +69,7 @@ if(isset($_POST['ptitle'])){
 			$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$totalFee', '0', '$today', 'OUT', 'Poll Creation Fee', 'NA')";
 			mysqli_query($conn, $q);
 			$today = date("Y-m-d H:i:s");
-			$q = "insert into polls (poll_owner, poll_title, poll_result, result_access, incentivised, incentive_pool, start_time, end_time, expired_flag) values('$userID', '$pTitle', '0', '$pResult', '$pReward', '$pAmount', '$today', '$pEnd', '0')";
+			$q = "insert into polls (poll_owner, poll_title, poll_result, result_access, incentivised, incentive_pool, start_time, end_time, expired_flag) values('$userID', '$pTitle', '0', '$pResult', '$pReward', '$incentiveAmt', '$today', '$pEnd', '0')";
 			mysqli_query($conn, $q);
 			$q = "select poll_id from polls where poll_owner = '$userID' and poll_title = '$pTitle'";
 			$res = mysqli_query($conn, $q);
@@ -102,25 +107,27 @@ if(isset($_POST['ptitle'])){
   <!-- Vendor CSS Files -->
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/zebra.css" type="text/css">
   
   <!-- javascript functions -->
-  <script type="text/javascript" src="assets/js/zebra_datepicker.js"></script>
   <script src="web3libs/solanaweb3.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script src="web3libs/nacl-fast.js"></script>
   <script>
 	async function signInWallet(walletAddr, theMsg)
 	{
+		let verified = false;
 		const encMessage = new TextEncoder().encode(theMsg);
-		const signedMessage = await window.solana.signMessage(walletAddr, encMessage);
-		//const signedMessage = await window.solana.signMessage(encMessage, "utf8");
-		const verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
-		if(walletAddr != signMessage.publicKey){
+		try{
+			const signedMessage = await window.solana.signMessage(encMessage, "utf8");
+			verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
+			if(walletAddr != signedMessage.publicKey){
+				verified = false;
+			}
+		}catch(err){
 			verified = false;
 		}
 		return verified;
@@ -128,21 +135,16 @@ if(isset($_POST['ptitle'])){
 	
 	async function signWallet(waddr)
 	{
-		const theForm = document.getElementById("pollform");
+		const theForm = document.getElementById("newform");
 		theForm.addEventListener("submit",(e) => {e.preventDefault();});
 		const result = await signInWallet(waddr, "Verify your Account. This does not cost any fee.");
 		if(result){
 			theForm.submit();
+		}else{
+			alert("Account could not be verified");
 		}
 	}
-	 
-	  $(document).ready(function(){
-		$('input#pend').Zebra_DatePicker({
-			format: 'Y-m-d',
-			view: 'years'
-		});
-	  });
-	</script>
+</script>
 
 </head>
 
@@ -152,7 +154,7 @@ if(isset($_POST['ptitle'])){
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="index.html" class="logo d-flex align-items-center">
+      <a href="index.php" class="logo d-flex align-items-center">
         <img src="assets/img/logo.png" alt="">
         <span class="d-none d-lg-block">CrowdWise</span>
       </a>
@@ -301,7 +303,9 @@ if(isset($_POST['ptitle'])){
 			<div class="col-lg-12">
 				<div class="card">
 					<div class="card-body">
-					  <h5 class="card-title"><?php echo $formMsg; ?></h5>
+					  <h5 class="card-title"><span style="color:#600"><?php echo $formMsg; ?></span></h5>
+					  <?php $pFee = $POLL_FEE/$LAMPS_PER_SOL; ?>
+					  <p>Poll creation fee: <?php echo $pFee; ?> SOL</p>
 					</div>
 				</div>
 			</div>
@@ -312,7 +316,7 @@ if(isset($_POST['ptitle'])){
 	?>
 		<section class="section">
 			<div class="row">
-				<div class="col-lg-6">
+				<div class="col-lg-12">
 				  <div class="card info-card customers-card">
 					<div class="card-body">
 						<h5 class="card-title">Poll <span>| Create</span></h5>
@@ -321,8 +325,8 @@ if(isset($_POST['ptitle'])){
 								<div class="text-center"><br></div>
 								<form method="post" action="newpoll.php">
 									<div class="row mb-3">
-									  <label for="input2" class="col-sm-2 col-form-label">Number of Options</label>
-									  <div class="col-sm-10">
+									  <label for="input2" class="col-sm-6 col-form-label">Number of Options</label>
+									  <div class="col-sm-6">
 										<input type="text" class="form-control" id="input2" name="optcount" value="<?php echo $noOfOptions; ?>">
 									  </div>
 									</div>
@@ -343,79 +347,77 @@ if(isset($_POST['ptitle'])){
 		<section class="section">
 		  <div class="row">
 			
-			<div class="col-lg-6">
+			<div class="col-lg-12">
 			  <div class="card info-card customers-card">
 				<div class="card-body">
 					<h5 class="card-title">Poll <span>| Create</span></h5>
-					<div class="d-flex align-items-center">
-						<div class="ps-3">
-							<form method="post" action="newpoll.php" id="newform">
-								<input type="hidden" name="optcount" value="<?php echo $noOfOptions; ?>">
-								<div class="row mb-3">
-								  <label for="inputText" class="col-sm-2 col-form-label">Poll Title</label>
-								  <div class="col-sm-10">
-									<input type="text" class="form-control" name="ptitle">
-								  </div>
-								</div>
-								<?php
-								for($i = 0;$i = $noOfOptions;$i++){
-									$oname = "opt$i";
-									$oTitle = "Option ".($i + 1);
-									?>
-									<div class="row mb-3">
-									  <label for="inputText" class="col-sm-2 col-form-label"><?php echo $oTitle; ?></label>
-									  <div class="col-sm-10">
-										<input type="text" class="form-control" name="<?php echo $oname; ?>">
-									  </div>
-									</div>
-									<?php
-								}
-								?>
-								<div class="row mb-3">
-								  <label for="inputText" class="col-sm-2 col-form-label">Poll End Date</label>
-								  <div class="col-sm-10">
-									<input type="text" class="form-control" name="pend" id="pend">
-								  </div>
-								</div>
-								
-								<fieldset class="row mb-3">
-								  <legend class="col-form-label col-sm-2 pt-0">Results Access</legend>
-								  <div class="col-sm-10">
-									<div class="form-check">
-									  <input class="form-check-input" type="radio" name="presult" id="presult1" value="Private" checked>
-									  <label class="form-check-label" for="presult1">Private</label>
-									</div>
-									<div class="form-check">
-									  <input class="form-check-input" type="radio" name="presult" id="presult2" value="Public">
-									  <label class="form-check-label" for="presult2">Public</label>
-									</div>
-								  </div>
-								</fieldset>
-								<fieldset class="row mb-3">
-								  <legend class="col-form-label col-sm-2 pt-0">Incentivised</legend>
-								  <div class="col-sm-10">
-									<div class="form-check">
-									  <input class="form-check-input" type="radio" name="preward" id="preward1" value="1">
-									  <label class="form-check-label" for="presult1">Yes</label>
-									</div>
-									<div class="form-check">
-									  <input class="form-check-input" type="radio" name="preward" id="preward2" value="0" checked>
-									  <label class="form-check-label" for="presult2">No</label>
-									</div>
-								  </div>
-								</fieldset>
-								<div class="row mb-3">
-								  <label for="inputText" class="col-sm-2 col-form-label">Incentive Amount</label>
-								  <div class="col-sm-10">
-									<input type="text" class="form-control" name="pamt" id="pamt">
-								  </div>
-								</div>
-								<div class="text-center">
-								  <button onclick="signWallet('<?php echo $walletAddress; ?>')" class="btn btn-primary" name="formbtn">Sign and Create</button>
-								</div>
-							</form>
+						
+					<form method="post" action="newpoll.php" id="newform">
+						<input type="hidden" name="optcount" value="<?php echo $noOfOptions; ?>">
+						<div class="row mb-3">
+						  <label for="inputText" class="col-sm-2 col-form-label">Poll Title/Topic</label>
+						  <div class="col-sm-10">
+							<input type="text" class="form-control" name="ptitle">
+						  </div>
 						</div>
-					</div>
+						<?php
+						for($i = 0;$i < $noOfOptions;$i++){
+							$oname = "opt$i";
+							$oTitle = "Option ".($i + 1);
+							?>
+							<div class="row mb-3">
+							  <label for="inputText" class="col-sm-2 col-form-label"><?php echo $oTitle; ?></label>
+							  <div class="col-sm-10">
+								<input type="text" class="form-control" name="<?php echo $oname; ?>">
+							  </div>
+							</div>
+							<?php
+						}
+						?>
+						<div class="row mb-3">
+						  <label for="inputText" class="col-sm-2 col-form-label">Poll End Date</label>
+						  <div class="col-sm-10">
+							<input type="text" class="form-control" name="pend" id="pend">
+						  </div>
+						</div>
+						
+						<fieldset class="row mb-3">
+						  <legend class="col-form-label col-sm-2 pt-0">Results Access</legend>
+						  <div class="col-sm-10">
+							<div class="form-check">
+							  <input class="form-check-input" type="radio" name="presult" id="presult1" value="Private" checked>
+							  <label class="form-check-label" for="presult1">Private</label>
+							</div>
+							<div class="form-check">
+							  <input class="form-check-input" type="radio" name="presult" id="presult2" value="Public">
+							  <label class="form-check-label" for="presult2">Public</label>
+							</div>
+						  </div>
+						</fieldset>
+						<fieldset class="row mb-3">
+						  <legend class="col-form-label col-sm-2 pt-0">Incentivised</legend>
+						  <div class="col-sm-10">
+							<div class="form-check">
+							  <input class="form-check-input" type="radio" name="preward" id="preward1" value="1">
+							  <label class="form-check-label" for="presult1">Yes</label>
+							</div>
+							<div class="form-check">
+							  <input class="form-check-input" type="radio" name="preward" id="preward2" value="0" checked>
+							  <label class="form-check-label" for="presult2">No</label>
+							</div>
+						  </div>
+						</fieldset>
+						<div class="row mb-3">
+						  <label for="inputText" class="col-sm-2 col-form-label">Incentive Amount</label>
+						  <div class="col-sm-10">
+							<input type="text" class="form-control" name="pamt" id="pamt">
+						  </div>
+						</div>
+						<div class="text-center">
+						  <button onclick="signWallet('<?php echo $walletAddress; ?>')" class="btn btn-primary" name="formbtn">Sign and Create</button>
+						</div>
+					</form>
+					
 				</div>
 			  </div>
 			</div>
@@ -435,6 +437,15 @@ if(isset($_POST['ptitle'])){
   
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
-
+  <script type="text/javascript" src="assets/js/jquery.min.js"></script>
+  <script type="text/javascript" src="assets/js/zebra_datepicker.js"></script>
+  <script>
+  $(document).ready(function(){
+		$('input#pend').Zebra_DatePicker({
+			format: 'Y-m-d',
+			view: 'years'
+		});
+	  });
+  </script>
 </body>
 </html>

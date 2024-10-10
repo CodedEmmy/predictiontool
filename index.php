@@ -136,7 +136,6 @@ include_once("dbconfig.php");
                     </div>
                     <div class="col-12">
                       <button class="btn btn-primary w-100" onclick="walletLogin()" id="loginbtn" name="loginbtn">Login/Register</button>
-					  <!-- <button class="btn btn-primary w-100" id="loginbtn" name="loginbtn">Login/Register</button> -->
                     </div>
                   </form>
 
@@ -144,7 +143,7 @@ include_once("dbconfig.php");
               </div>
 
               <div class="credits">
-                (Phantom Solana Wallet Required)
+                (Phantom Solana Wallet Required)<br> [This is a Demo platform: Use Solana Devnet to interact]
               </div>
 
             </div>

@@ -2,6 +2,7 @@
 ob_start();
 require_once("check.php");
 include_once("dbconfig.php");
+require_once("appconstants.php");
 $userID = $_SESSION['u_id'];
 $userName = $_SESSION['u_nickname'];
 $walletAddress = $_SESSION['w_address'];
@@ -27,8 +28,7 @@ $walletAddress = $_SESSION['w_address'];
   <!-- Vendor CSS Files -->
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
   
@@ -39,11 +39,15 @@ $walletAddress = $_SESSION['w_address'];
   <script>
 	async function signInWallet(walletAddr, theMsg)
 	{
+		let verified = false;
 		const encMessage = new TextEncoder().encode(theMsg);
-		const signedMessage = await window.solana.signMessage(walletAddr, encMessage);
-		//const signedMessage = await window.solana.signMessage(encMessage, "utf8");
-		const verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
-		if(walletAddr != signMessage.publicKey){
+		try{
+			const signedMessage = await window.solana.signMessage(encMessage, "utf8");
+			verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
+			if(walletAddr != signMessage.publicKey){
+				verified = false;
+			}
+		}catch(err){
 			verified = false;
 		}
 		return verified;
@@ -56,6 +60,8 @@ $walletAddress = $_SESSION['w_address'];
 		const result = await signInWallet(waddr, "Close your Poll. This does not cost any fee.");
 		if(result){
 			theForm.submit();
+		}else{
+			alert("Account could not be verified");
 		}
 	}
   </script>
@@ -68,7 +74,7 @@ $walletAddress = $_SESSION['w_address'];
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="index.html" class="logo d-flex align-items-center">
+      <a href="index.php" class="logo d-flex align-items-center">
         <img src="assets/img/logo.png" alt="">
         <span class="d-none d-lg-block">CrowdWise</span>
       </a>
@@ -214,7 +220,7 @@ $walletAddress = $_SESSION['w_address'];
 
     <section class="section">
       <div class="row">
-        <div class="col-lg-4">
+        <div class="col-lg-7">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">My Created Polls</h5>
@@ -245,12 +251,12 @@ $walletAddress = $_SESSION['w_address'];
 
         </div>
 		
-		<div class="col-lg-6">
+		<div class="col-lg-5">
           <div class="card info-card sales-card">
             <div class="card-body">
                 <h5 class="card-title">Poll <span>| Details</span></h5>
 				<?php
-				if(isset($_GET['pid']){
+				if(isset($_GET['pid'])){
 					$pollID = trim(mysqli_real_escape_string($conn,$_GET['pid']));
 					$sql = "select * from polls where poll_id = '$pollID'";
 					$res = mysqli_query($conn, $sql);
@@ -268,15 +274,15 @@ $walletAddress = $_SESSION['w_address'];
 						$hasReward = $pdata['incentivised'] == 1?true:false;
 						echo "<tr><th>Options</th><td><ol>";
 						while($odata = mysqli_fetch_assoc($ores)){
-							echo "<li>{$odata['poll_options']}";
+							echo "<li>{$odata['poll_option']}";
 							if($hasClosed){
 								echo " ({$odata['vote_count']})";
 							}
 							echo "</li>";
 						}
-						echo "</ol></td></tr>"
-						echo "<tr><th>Duration</th><td>{$pdata['start_time']} - {$pdata['end_time']}</td></tr>"
-						echo "<tr><th>Result Access</th><td>{$pdata['result_access']}</td></tr>"
+						echo "</ol></td></tr>";
+						echo "<tr><th>Duration</th><td>{$pdata['start_time']} - {$pdata['end_time']}</td></tr>";
+						echo "<tr><th>Result Access</th><td>{$pdata['result_access']}</td></tr>";
 						echo "<tr><th>Incentivised</th><td>";
 						if($hasReward){
 							echo "Yes</td></tr>";
@@ -317,7 +323,7 @@ $walletAddress = $_SESSION['w_address'];
 								</div>
 							</form>
 							<?php
-							echo "</td></tr>"
+							echo "</td></tr>";
 						}
 						?>
 						</tbody>

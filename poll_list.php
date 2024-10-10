@@ -41,7 +41,7 @@ $today = date("Y-m-d H:i:s");
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="index.html" class="logo d-flex align-items-center">
+      <a href="index.php" class="logo d-flex align-items-center">
         <img src="assets/img/logo.png" alt="">
         <span class="d-none d-lg-block">CrowdWise</span>
       </a>
@@ -220,7 +220,7 @@ $today = date("Y-m-d H:i:s");
                 </thead>
                 <tbody>
 					<?php
-					$sql = "select poll_id, poll_title, start_time, end_time, incentivised, expired_flag from polls";
+					$sql = "select poll_id, poll_title, start_time, end_time, incentivised, expired_flag from polls where poll_owner <> '$userID'";
 					$res = mysqli_query($conn, $sql);
 					$rowCount = 1;
 					while($pdata = mysqli_fetch_assoc($res)){
@@ -235,7 +235,7 @@ $today = date("Y-m-d H:i:s");
 						}
 						echo "<td>$rewardPool</td><td>$pollStatus</td>";
 						
-						$q2 = "select reward_amt from poll_voters where poll_id = '{$pdata['poll_id']} and voter_id = '$userID'";
+						$q2 = "select reward_amt from poll_voters where poll_id = '{$pdata['poll_id']}' and voter_id = '$userID'";
 						$res2 = mysqli_query($conn, $q2);
 						if(@mysqli_num_rows($res2) == 0){
 							if($canVote){

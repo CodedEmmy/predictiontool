@@ -53,8 +53,6 @@ if(isset($_POST['pollid'])){
   <!-- Vendor CSS Files -->
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
   
@@ -65,11 +63,15 @@ if(isset($_POST['pollid'])){
   <script>
 	async function signInWallet(walletAddr, theMsg)
 	{
+		let verified = false;
 		const encMessage = new TextEncoder().encode(theMsg);
-		const signedMessage = await window.solana.signMessage(walletAddr, encMessage);
-		//const signedMessage = await window.solana.signMessage(encMessage, "utf8");
-		const verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
-		if(walletAddr != signMessage.publicKey){
+		try{
+			const signedMessage = await window.solana.signMessage(encMessage, "utf8");
+			verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
+			if(walletAddr != signedMessage.publicKey){
+				verified = false;
+			}
+		}catch(err){
 			verified = false;
 		}
 		return verified;
@@ -82,6 +84,8 @@ if(isset($_POST['pollid'])){
 		const result = await signInWallet(waddr, "Verify your Vote. This does not cost any fee.");
 		if(result){
 			theForm.submit();
+		}else{
+			alert("Account could not be verified");
 		}
 	}
   </script>
@@ -94,7 +98,7 @@ if(isset($_POST['pollid'])){
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="index.html" class="logo d-flex align-items-center">
+      <a href="index.php" class="logo d-flex align-items-center">
         <img src="assets/img/logo.png" alt="">
         <span class="d-none d-lg-block">CrowdWise</span>
       </a>
@@ -261,22 +265,25 @@ if(isset($_POST['pollid'])){
                 </div>
                 <input type="hidden" name="pollid" value="<?php echo $pollID; ?>">
 				<input type="hidden" name="rewarddate" value="<?php echo $$pdata['end_time']; ?>">
-				
+				<fieldset class="row mb-3">
+				  <legend class="col-form-label col-sm-2 pt-0">Options</legend>
+				  <div class="col-sm-10">
 				<?php
 				$opts = "select poll_option,option_id from poll_options where poll_id = '$pollID'";
 				$optsRes = mysqli_query($conn, $opts);
 				$count = 0;
 				while($odata = mysqli_fetch_assoc($optsRes)){
 				?>
-				<div class="row mb-3">
-					<label for="sel4" class="col-sm-2 col-form-label"><?php echo $odata['poll_option']; ?></label>
-					<div class="col-sm-10">
-					  <input class="form-control" type="radio" name="poption" value="<?php echo $odata['option_id']; ?>" <?php if($count == 0) echo "checked"; ?>>
+					<div class="form-check">
+					  <input class="form-check-input" type="radio" name="poption" id="presult1" value="<?php echo $odata['option_id']; ?>" <?php if($count == 0) echo "checked"; ?>>
+					  <label class="form-check-label" for="presult1"><?php echo $odata['poll_option']; ?></label>
 					</div>
-				</div>
 				<?php
+					$count++;
 				}
 				?>
+					</div>
+				</fieldset>
 				<div class="text-center"><br></div>
                 <div class="text-center">
                   <button onclick="signWallet('<?php echo $walletAddress; ?>')" class="btn btn-primary" name="formbtn">Vote</button>
