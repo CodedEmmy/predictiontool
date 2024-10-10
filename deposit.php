@@ -116,12 +116,22 @@ if(isset($_POST['trxid'])){
 					}
 					if(fnMsg == "-"){
 						//await connection.confirmTransaction(signature.signature);
+						/*
 						await connection.confirmTransaction({blockhash: blockhashObj.blockhash, lastValidBlockHeight: blockhashObj.lastValidBlockHeight, signature: txid,});
-						fnMsg = "Confirmed";
+						*/
+						
+						// Confirm the transaction was successful.
+						const confirmationResult = await connection.confirmTransaction(txSignature, "confirmed");
+
+						if (confirmationResult.value.err) {
+							fnMsg = confirmationResult.value.err;
+							txid = "-";
+						} else {
+							fnMsg = "Transaction Submitted";
+						}
 					}catch(err){
 						fnMsg = err;
 						txid = "-";
-						alert("Debug: deposit fn 2" + err);
 					}
 				}
 			}
@@ -134,9 +144,6 @@ if(isset($_POST['trxid'])){
 		const theForm = document.getElementById("depform");
 		theForm.addEventListener("submit",(e) => {e.preventDefault();});
 		const result = await transferFromUser(dAddr, uAddr, depAmt, endpt);
-		
-		alert("Debug: deposit fn 1: after result");
-		
 		theForm.trxid.value = result.trx_id;
 		theForm.errmsg.value = result.trx_status;
 		theForm.submit();

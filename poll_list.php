@@ -194,14 +194,14 @@ $today = date("Y-m-d H:i:s");
 				<h5 class="card-title">Polls <span>| Total</span></h5>
                 <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-currency-dollar"></i>
+                      <i class="bi bi-list"></i>
                     </div>
                     <div class="ps-3">
 						<?php
 						$sql = "select count(*) from polls";
 						$res = mysqli_query($conn, $sql);
 						$pdata = mysqli_fetch_row($res);
-						echo "<h6>{$pdata[0]}</h6>";
+						echo "<h5>{$pdata[0]}</h5>";
 						?>
                     </div>
                 </div>
@@ -216,15 +216,21 @@ $today = date("Y-m-d H:i:s");
               
               <table class="table">
                 <thead>
-                  <tr><th scope="col">Sn</th><th scope="col">Poll Title</th><th scope="col">Duration</th><th scope="col">Incentive</th><th scope="col">Poll Status</th><th scope="col">Vote Status</th><th scope="col">&nbsp;</th></tr>
+                  <tr><th scope="col">Sn</th><th scope="col">Poll Title</th><th scope="col">Duration</th><th scope="col">Incentive</th><th scope="col">Poll Status</th><th scope="col">Vote Status</th><th scope="col">Action</th></tr>
                 </thead>
                 <tbody>
 					<?php
-					$sql = "select poll_id, poll_title, start_time, end_time, incentivised, expired_flag from polls where poll_owner <> '$userID'";
+					$sql = "select poll_id, poll_owner, poll_title, start_time, end_time, incentivised, expired_flag from polls";
 					$res = mysqli_query($conn, $sql);
 					$rowCount = 1;
 					while($pdata = mysqli_fetch_assoc($res)){
-						echo "<tr><th scope='row'>$rowCount</th>";
+						$pollOwner = false;
+						if($pdata['poll_owner'] == $userID){
+							$pollOwner = true;
+						}
+						echo "<tr><th scope='row'>";
+						if($pollOwner){ echo "* "; }
+						echo "$rowCount</th>";
 						echo "<td>{$pdata['poll_title']}</td><td>{$pdata['start_time']} - {$pdata['end_time']}</td>";
 						$rewardPool = $pdata['incentivised'] == 1? "Yes":"No";
 						$canVote = true;
@@ -234,17 +240,20 @@ $today = date("Y-m-d H:i:s");
 							$pollStatus = "Closed";
 						}
 						echo "<td>$rewardPool</td><td>$pollStatus</td>";
-						
-						$q2 = "select reward_amt from poll_voters where poll_id = '{$pdata['poll_id']}' and voter_id = '$userID'";
-						$res2 = mysqli_query($conn, $q2);
-						if(@mysqli_num_rows($res2) == 0){
-							if($canVote){
-								echo "<td>Not Voted</td><td><a href='vote.php?pid={$pdata['poll_id']}'>Participate</a></td></tr>";
-							}else{
-								echo "<td>Not Voted</td><td>&nbsp;</td></tr>";
-							}
+						if($pollOwner){
+							echo "<td>Can't vote </td><td>&nbsp;</td></tr>";
 						}else{
-							echo "<td>You've Voted</td><td>&nbsp;</td></tr>";
+							$q2 = "select reward_amt from poll_voters where poll_id = '{$pdata['poll_id']}' and voter_id = '$userID'";
+							$res2 = mysqli_query($conn, $q2);
+							if(@mysqli_num_rows($res2) == 0){
+								if($canVote){
+									echo "<td>Not Voted</td><td><a href='vote.php?pid={$pdata['poll_id']}'>Participate</a></td></tr>";
+								}else{
+									echo "<td>Not Voted</td><td>&nbsp;</td></tr>";
+								}
+							}else{
+								echo "<td>You've Voted</td><td>&nbsp;</td></tr>";
+							}
 						}
 						$rowCount++;
 					}
