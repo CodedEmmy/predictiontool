@@ -52,31 +52,30 @@ if(isset($_POST['tokenamt'])){
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
   <!-- javascript functions  -->
-  <script src="web3libs/solanaweb3.js"></script>
+  <!-- <script src="web3libs/solanaweb3.js"></script> -->
+  <!-- fall back to version 1.30.2 to avoid buffer error -->
+  <script src="web3libs/solanaweb3v1_30_2.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
 	async function transferToUser(userAddr, amount, privkey, endpt)
 	{
 		//const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
-		var connection = new solanaWeb3.Connection(endpt, "confirmed",);
+		//var connection = new solanaWeb3.Connection(endpt, "confirmed",);
+		var connection = new solanaWeb3.Connection(endpt, "confirmed",{commitment: "confirmed", confirmTransactionInitialTimeout: 50000});
 		const privateKey = new Uint8Array(Base58.decode(privkey));
+		
 		const dappAccount = solanaWeb3.Keypair.fromSecretKey(privateKey);
-		const userWallet = new solanaWeb3.Publickey(userAddr);
-		var signTrx = "-";
-		var fnErr = "-";
-		try{
-			(async() =>{
-				const transaction = new solanaWeb3.Transaction();
-				transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: dappAccount.publicKey, toPubkey: UserWallet, lamports: amount}));
-				signature = await solanaWeb3.sendAndConfirmTransaction(connection, transaction,[dappAccount],);
-				signTrx = signature.signature;
-				fnErr = "Confirmed";
-			})();
-		}catch(err){
-			signTrx = "-";
-			fnErr = err;
-		}
-		return {trxID: signTrx, errMessage: fnErr};
+		const userWallet = new solanaWeb3.PublicKey(userAddr);
+		var transSign = "-";
+		var fnMsg = "-";
+		(async() =>{
+			var transaction = new solanaWeb3.Transaction();
+			transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: dappAccount.publicKey, toPubkey: userWallet, lamports: amount}),);
+			const signature = await solanaWeb3.sendAndConfirmTransaction(connection, transaction,[dappAccount],);
+			transSign = signature;
+			fnMsg = "Withdrawal Successful";
+		})();
+		return {trxID: transSign, errMessage: fnMsg};
 	}
 	
 	async function rewardClaim(waddr,claimAmt,pkey,endpt)
@@ -84,6 +83,7 @@ if(isset($_POST['tokenamt'])){
 		const theForm = document.getElementById("claimform");
 		theForm.addEventListener("submit",(e) => {e.preventDefault();});
 		const result = await transferToUser(waddr, claimAmt, pkey, endpt);
+		
 		theForm.trxid.value = result.trxID;
 		theForm.errmsg.value = result.errMessage;
 		theForm.submit();
