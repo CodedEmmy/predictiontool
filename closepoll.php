@@ -8,7 +8,7 @@ $walletAddress = $_SESSION['w_address'];
 $today = date("Y-m-d H:i:s");
 
 if(isset($_POST['pid'])){
-	$pollID = trim(mysqli_real_escape_string($conn,$_GET['pid']));
+	$pollID = trim(mysqli_real_escape_string($conn,$_POST['pid']));
 	$highestCount = -1;
 	$highestIndex = 0;
 	$totalVote = 0;
@@ -77,6 +77,5 @@ if(isset($_POST['pid'])){
 	}
 }
 $loc = "location: mypolls.php?pid=$pollID";
-//header("HTTP/1.1 301 Moved Permanently");
 header($loc);
 ?>

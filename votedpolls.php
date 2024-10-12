@@ -201,7 +201,7 @@ $walletAddress = $_SESSION['w_address'];
               
               <table class="table">
                 <thead>
-                  <tr><th scope="col">Sn</th><th scope="col">Decision Poll Topic</th><th scope="col">Vote Date</th><th scope="col">Reward<br>(If Any)</th><th scope="col">Reward Date</th><th scope="col">Poll Status</th><th scope="col">Poll Result</th></tr>
+                  <tr><th scope="col">Sn</th><th scope="col">Decision Poll Topic</th><th scope="col">Vote Date</th><th scope="col">Reward<br>(If Any)</th><th scope="col">Reward Date</th><th scope="col">Poll Status</th><th scope="col">Final Poll Decision</th></tr>
                 </thead>
                 <tbody>
 					<?php

@@ -44,7 +44,7 @@ $walletAddress = $_SESSION['w_address'];
 		try{
 			const signedMessage = await window.solana.signMessage(encMessage, "utf8");
 			verified = nacl.sign.detached.verify(encMessage, signedMessage.signature, signedMessage.publicKey.toBytes());
-			if(walletAddr != signMessage.publicKey){
+			if(walletAddr != signedMessage.publicKey){
 				verified = false;
 			}
 		}catch(err){
@@ -300,7 +300,7 @@ $walletAddress = $_SESSION['w_address'];
 						echo "<tr><th>Poll Status</th><td>";
 						if($hasClosed){
 							echo "Closed</td></tr>";
-							echo "<tr><th>Poll Result</th><td>";
+							echo "<tr><th>Final Poll<br>Decision</th><td>";
 							if($pdata['poll_result'] > 0){
 								$psql = "select poll_option from poll_options where option_id = '{$pdata['poll_result']}'";
 								$pres = mysqli_query($conn, $psql);
@@ -316,7 +316,7 @@ $walletAddress = $_SESSION['w_address'];
 							}
 						}else{
 							echo "Active</td></tr>";
-							echo "<tr><th>Poll Result</th><td>Pending</td></tr>";
+							echo "<tr><th>Final Poll<br>Decision</th><td>Pending</td></tr>";
 						}
 						if(!$hasClosed){
 							echo "<tr><td colspan=2>";

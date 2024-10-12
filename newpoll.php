@@ -66,9 +66,6 @@ if(isset($_POST['ptitle'])){
 			$q = "update user_accounts set current_amt = $newAmt where user_id = '$userID'";
 			mysqli_query($conn, $q);
 			$today = date("Y-m-d H:i:s");
-			$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$totalFee', '0', '$today', 'OUT', 'Poll Creation Fee', 'NA')";
-			mysqli_query($conn, $q);
-			$today = date("Y-m-d H:i:s");
 			$q = "insert into polls (poll_owner, poll_title, poll_result, result_access, incentivised, incentive_pool, start_time, end_time, expired_flag) values('$userID', '$pTitle', '0', '$pResult', '$pReward', '$incentiveAmt', '$today', '$pEnd', '0')";
 			mysqli_query($conn, $q);
 			$q = "select poll_id from polls where poll_owner = '$userID' and poll_title = '$pTitle'";
@@ -79,7 +76,9 @@ if(isset($_POST['ptitle'])){
 				$q = "insert into poll_options (poll_id, vote_count, poll_option) values('$pollID', '0', '{$optArray[$i]}')";
 				mysqli_query($conn, $q);
 			}
-			$formMsg = "Poll has been succesfully created";
+			$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$totalFee', '$pollID', '$today', 'OUT', 'Poll Creation Fee', 'NA')";
+			mysqli_query($conn, $q);
+			$formMsg = "Poll has been successfully created";
 		}else{
 			$formMsg = "Insufficient funds to cover fees!";
 		}
