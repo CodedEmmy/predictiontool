@@ -12,18 +12,20 @@ if(isset($_POST['tokenamt'])){
 	$trxID = trim(mysqli_real_escape_string($conn,$_POST['trxid']));
 	$tokenAmt = trim(mysqli_real_escape_string($conn,$_POST['tokenamt']));
 	$errMessage = trim(mysqli_real_escape_string($conn,$_POST['errmsg']));
+	$trxStatus = trim(mysqli_real_escape_string($conn,$_POST['txstatus']));
+	$formMsg = $errMessage;
 	if($trxID != "-"){
-		$q = "select withdrawn_amt from user_accounts where user_id = '$userID'";
-		$res = mysqli_query($conn, $q);
-		$pdata2 = mysqli_fetch_assoc($res);
-		$newWithdrawn = $pdata2['withdrawn_amt'] + $tokenAmt;
-		$q = "update user_accounts set current_amt = 0, withdrawn_amt = $newWithdrawn where user_id = '$userID'";
-		mysqli_query($conn, $q);
-		$today = date("Y-m-d H:i:s");
-		$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$tokenAmt', '0', '$today', 'OUT', 'Reward Withdrawal', '$trxID')";
-		mysqli_query($conn, $q);
-	}else{
-		$formMsg = $errMessage;
+		if($trxStatus == "True"){
+			$q = "select withdrawn_amt from user_accounts where user_id = '$userID'";
+			$res = mysqli_query($conn, $q);
+			$pdata2 = mysqli_fetch_assoc($res);
+			$newWithdrawn = $pdata2['withdrawn_amt'] + $tokenAmt;
+			$q = "update user_accounts set current_amt = 0, withdrawn_amt = $newWithdrawn where user_id = '$userID'";
+			mysqli_query($conn, $q);
+			$today = date("Y-m-d H:i:s");
+			$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$tokenAmt', '0', '$today', 'OUT', 'Reward Withdrawal', '$trxID')";
+			mysqli_query($conn, $q);
+		}
 	}
 }
 ?>
@@ -57,25 +59,84 @@ if(isset($_POST['tokenamt'])){
   <script src="web3libs/solanaweb3v1_30_2.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
+	async function sleep(ms)
+	{
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+	
+	async function isBlockhashExpired(connection: Connection, lastBlockHeight: number)
+	{
+		let currentBlockHeight = (await connection.getBlockHeight('finalized'));
+		return (currentBlockHeight > lastBlockHeight - 150);
+	}
+	
 	async function transferToUser(userAddr, amount, privkey, endpt)
 	{
+		var txStatus = "-";
+		var txSign = "-";
+		var fnMsg = "-";
+		
 		//const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
-		//var connection = new solanaWeb3.Connection(endpt, "confirmed",);
-		var connection = new solanaWeb3.Connection(endpt, "confirmed",{commitment: "confirmed", confirmTransactionInitialTimeout: 50000});
+		var connection = new solanaWeb3.Connection(endpt, "confirmed",);
+		//var connection = new solanaWeb3.Connection(endpt, "confirmed",{confirmTransactionInitialTimeout: 50000});
 		const privateKey = new Uint8Array(Base58.decode(privkey));
 		
 		const dappAccount = solanaWeb3.Keypair.fromSecretKey(privateKey);
-		const userWallet = new solanaWeb3.PublicKey(userAddr);
-		var transSign = "-";
-		var fnMsg = "-";
-		(async() =>{
+		let dappBalance = await connection.getBalance(dappAccount.publicKey);
+		if(dappBalance < amount){
+			txSign = "-";
+			txStatus = "False";
+			fnMsg = "Cannot complete Withdrawal. Try again later";
+		}else{		
+			const userWallet = new solanaWeb3.PublicKey(userAddr);
 			var transaction = new solanaWeb3.Transaction();
 			transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: dappAccount.publicKey, toPubkey: userWallet, lamports: amount}),);
-			const signature = await solanaWeb3.sendAndConfirmTransaction(connection, transaction,[dappAccount],);
-			transSign = signature;
-			fnMsg = "Withdrawal Successful";
-		})();
-		return {trxID: transSign, errMessage: fnMsg};
+			//blockhashObj = await connection.getRecentBlockhash();
+			blockhashObj = await connection.getRecentBlockhashAndContext('finalized');
+				//blockhashObj = await connection.getLatestBlockhashAndContext('finalized');
+			const lastValidHeight = blockhashObj.value.lastValidBlockHeight;
+			transaction.recentBlockhash = blockhashObj.value.blockhash;
+			
+			txSign = await connection.sendTransaction(transaction, [dappAccount],{commitment: 'confirmed'};
+			var hashExpired = false;
+			var txSuccess = false;
+			var checkStatus = true;
+			while(checkStatus){
+				var status = await connection.getSignatureStatus(txSign, {searchTransactionHistory:true,});
+				console.log(status);
+				if(status.value === null){
+					txStatus = "False";
+					fnMsg = "Failed to get transaction status";
+					checkStatus = false;
+				}else{
+					if(status.value.err !== null){
+						//trx Failed
+						txStatus = "False";
+						fnMsg = "Transaction failed: ${JSON.stringify(status.value.err)}";
+						checkStatus = false;
+					}else{
+						if(status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized'){
+							txSuccess = true;
+							checkStatus = false;
+							txStatus = "True";
+							fnMsg = "Withdrawal Successful";
+						}						
+					}
+				}
+				if(!txSuccess){
+					hashExpired = await isBlockhashExpired(connection, lastValidHeight);
+					if(hashExpired){
+						txStatus = "False";
+						checkStatus = false;
+						fnMsg = "Transaction expired: You may retry.";
+					}else{
+						//wait and check status again in 2.5 seconds
+						await sleep(2500);
+					}
+				}
+			}
+		}
+		return {trxID: txSign, errMessage: fnMsg, trxStatus: txStatus};
 	}
 	
 	async function rewardClaim(waddr,claimAmt,pkey,endpt)
@@ -86,6 +147,7 @@ if(isset($_POST['tokenamt'])){
 		
 		theForm.trxid.value = result.trxID;
 		theForm.errmsg.value = result.errMessage;
+		theForm.txstatus.value = result.trxStatus;
 		theForm.submit();
 	}
   </script>
@@ -298,6 +360,7 @@ if(isset($_POST['tokenamt'])){
 							<input type="hidden" name="tokenamt" value="<?php echo $pdata['current_amt']; ?>">
 							<input type="hidden" name="trxid" value="-">
 							<input type="hidden" name="errmsg" value="-">
+							<input type="hidden" name="txstatus" value="-">
 							<div class="text-center">
 								<?php
 								$showBtn = "disabled";
@@ -350,7 +413,14 @@ if(isset($_POST['tokenamt'])){
 						echo "<tr><th scope='row'>$rowCount</th>";
 						echo "<td>{$pdata['activity_date']}</td><td>{$pdata['activity_type']}</td>";
 						$amtInSol = $pdata['reward_amt']/$LAMPS_PER_SOL;
-						echo "<td>$amtInSol SOL</td><td>{$pdata['activity_desc']}</td><td>{$pdata['trx_id']}</td>";
+						echo "<td>$amtInSol SOL</td><td>{$pdata['activity_desc']}</td><td>";
+						if($pdata['trx_id'] === 'NA'){
+							echo $pdata['trx_id'];
+						}else{
+						$trxLink = "<a target='_blank' href='https://explorer.solana.com/tx/{$pdata['trx_id']}?cluster=devnet'>{$pdata['trx_id']}</a>";
+							echo $trxLink;
+						}
+						echo "</td>";
 						if($pdata['poll_id'] > 0){
 							$q2 = "select poll_title from polls where poll_id = '{$pdata['poll_id']}'";
 							$res2 = mysqli_query($conn, $q2);
