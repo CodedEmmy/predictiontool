@@ -27,19 +27,21 @@ if(isset($_POST['trxid'])){
 	$trxID = trim(mysqli_real_escape_string($conn,$_POST['trxid']));
 	$tokenAmt = trim(mysqli_real_escape_string($conn,$_POST['tokenamt']));
 	$errMessage = trim(mysqli_real_escape_string($conn,$_POST['errmsg']));
+	$trxStatus = trim(mysqli_real_escape_string($conn,$_POST['txstatus']));
+	$formMsg = $errMessage;
 	if($trxID != "-"){
-		$q = "select current_amt from user_accounts where user_id = '$userID'";
-		$res = mysqli_query($conn, $q);
-		$pdata2 = mysqli_fetch_assoc($res);
-		$newAmount = $pdata2['current_amt'] + $tokenAmt;
-		$q = "update user_accounts set current_amt = $newAmount where user_id = '$userID'";
-		mysqli_query($conn, $q);
-		$today = date("Y-m-d H:i:s");
-		$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$tokenAmt', '0', '$today', 'IN', 'User Deposit', '$trxID')";
-		mysqli_query($conn, $q);
-		header("location: wallet.php");
-	}else{
-		$formMsg = $errMessage;
+		if($trxStatus == "True"){
+			$q = "select current_amt from user_accounts where user_id = '$userID'";
+			$res = mysqli_query($conn, $q);
+			$pdata2 = mysqli_fetch_assoc($res);
+			$newAmount = $pdata2['current_amt'] + $tokenAmt;
+			$q = "update user_accounts set current_amt = $newAmount where user_id = '$userID'";
+			mysqli_query($conn, $q);
+			$today = date("Y-m-d H:i:s");
+			$q = "insert into wallet_history (user_id, reward_amt, poll_id, activity_date, activity_type, activity_desc, trx_id) values('$userID', '$tokenAmt', '0', '$today', 'IN', 'User Deposit', '$trxID')";
+			mysqli_query($conn, $q);
+			header("location: wallet.php");
+		}
 	}
 }
 ?>
@@ -74,10 +76,22 @@ if(isset($_POST['trxid'])){
   <script src="web3libs/solanaweb3v1_30_2.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
+	async function sleep(ms)
+	{
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+	
+	async function isBlockhashExpired(connection: Connection, lastBlockHeight: number)
+	{
+		let currentBlockHeight = (await connection.getBlockHeight('finalized'));
+		return (currentBlockHeight > lastBlockHeight - 150);
+	}
+	
 	async function transferFromUser(dappAddr, userAddr, amount, endpt)
 	{	
-		let txid = "-";
+		let txSign = "-";
 		let fnMsg = "-";
+		let txStatus = "-";
 		const phantom = window.solana;
 		if(!phantom){
 			fnMsg = "Phantom Wallet not detected";
@@ -96,47 +110,61 @@ if(isset($_POST['trxid'])){
 				if(userAddr != userWallet.toString()){
 					fnMsg = "Wallet mismatch: Ensure that you are connected to " + userAddr;
 				}else{
-					let blockhashObj = NULL;
-					try{
-						//var connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl(endpt),"confirmed");
-						var connection = new solanaWeb3.Connection(endpt, "confirmed",);
-						var dappWallet = new solanaWeb3.PublicKey(dappAddr);
-						let transaction = new solanaWeb3.Transaction();
-						transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: userWallet, toPubkey: dappWallet, lamports: amount,}),);
-						transaction.feePayer = userWallet;
+					var connection = new solanaWeb3.Connection(endpt, "confirmed",);
+					var dappWallet = new solanaWeb3.PublicKey(dappAddr);
+					let transaction = new solanaWeb3.Transaction();
+					transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: userWallet, toPubkey: dappWallet, lamports: amount,}),);
+					transaction.feePayer = userWallet;
 						
-						blockhashObj = await connection.getRecentBlockhash();
+					var	blockhashObj = await connection.getRecentBlockhash();
 						//blockhashObj = await connection.getLatestBlockhash();
-						transaction.recentBlockhash = blockhashObj.blockhash;
+					transaction.recentBlockhash = blockhashObj.blockhash;
 						
-						let signature = await phantom.signAndSendTransaction(transaction);
-						txid = signature.signature;
-					}catch(err){
-						fnMsg = err;
-					}
-					if(fnMsg == "-"){
-						//await connection.confirmTransaction(signature.signature);
-						/*
-						await connection.confirmTransaction({blockhash: blockhashObj.blockhash, lastValidBlockHeight: blockhashObj.lastValidBlockHeight, signature: txid,});
-						*/
-						
-						// Confirm the transaction was successful.
-						const confirmationResult = await connection.confirmTransaction(txSignature, "confirmed");
-
-						if (confirmationResult.value.err) {
-							fnMsg = confirmationResult.value.err;
-							txid = "-";
-						} else {
-							fnMsg = "Transaction Submitted";
+					let signature = await phantom.signAndSendTransaction(transaction);
+					txSign = signature.signature;
+					
+					var hashExpired = false;
+					var txSuccess = false;
+					var checkStatus = true;
+					while(checkStatus){
+						var status = await connection.getSignatureStatus(txSign, {searchTransactionHistory:true,});
+						console.log(status);
+						if(status.value === null){
+							txStatus = "False";
+							fnMsg = "Failed to get transaction status";
+							checkStatus = false;
+						}else{
+							if(status.value.err !== null){
+								//trx Failed
+								txStatus = "False";
+								fnMsg = "Transaction failed: ${JSON.stringify(status.value.err)}";
+								checkStatus = false;
+							}else{
+								if(status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized'){
+									txSuccess = true;
+									checkStatus = false;
+									txStatus = "True";
+									fnMsg = "Deposit Successful";
+								}						
+							}
 						}
-					}catch(err){
-						fnMsg = err;
-						txid = "-";
+						if(!txSuccess){
+							hashExpired = await isBlockhashExpired(connection, lastValidHeight);
+							if(hashExpired){
+								txStatus = "False";
+								checkStatus = false;
+								fnMsg = "Transaction expired: You may retry.";
+							}else{
+								//wait and check status again in 2.5 seconds
+								await sleep(2500);
+							}
+						}
 					}
+					
 				}
 			}
 		}
-		return {trx_id: txid, trx_status: fnMsg};
+		return {trxID: txSign, errMessage: fnMsg, trxStatus: txStatus};
 	}
   
 	async function tokenDeposit(dAddr,uAddr,depAmt,endpt)
@@ -144,8 +172,9 @@ if(isset($_POST['trxid'])){
 		const theForm = document.getElementById("depform");
 		theForm.addEventListener("submit",(e) => {e.preventDefault();});
 		const result = await transferFromUser(dAddr, uAddr, depAmt, endpt);
-		theForm.trxid.value = result.trx_id;
-		theForm.errmsg.value = result.trx_status;
+		theForm.trxid.value = result.trxID;
+		theForm.errmsg.value = result.errMessage;
+		theForm.txstatus.value = result.trxStatus;
 		theForm.submit();
 	}
   </script>
@@ -364,6 +393,7 @@ if(isset($_POST['trxid'])){
 								<input type="hidden" name="tokenamt" value="<?php echo $amtInLamp; ?>">
 								<input type="hidden" name="trxid" value="-">
 								<input type="hidden" name="errmsg" value="-">
+								<input type="hidden" name="txstatus" value="-">
 								
 								<div class="row mb-3">
 								  <label for="input2" class="col-sm-6 col-form-label">Amount to Deposit (In SOL)</label>
