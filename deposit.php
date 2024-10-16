@@ -76,14 +76,12 @@ if(isset($_POST['trxid'])){
   <script src="web3libs/solanaweb3v1_30_2.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
-	async function sleep(ms)
-	{
-		return new Promise(resolve => setTimeout(resolve, ms));
-	}
+	const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 	
-	async function isBlockhashExpired(connection: Connection, lastBlockHeight: number)
+	async function isBlockhashExpired(connect, lastBlockHeight)
 	{
-		let currentBlockHeight = (await connection.getBlockHeight('finalized'));
+		const bhObj = await connect.getRecentBlockhash();
+		let currentBlockHeight = bhObj.lastValidBlockHeight;
 		return (currentBlockHeight > lastBlockHeight - 150);
 	}
 	
@@ -119,7 +117,8 @@ if(isset($_POST['trxid'])){
 					var	blockhashObj = await connection.getRecentBlockhash();
 						//blockhashObj = await connection.getLatestBlockhash();
 					transaction.recentBlockhash = blockhashObj.blockhash;
-						
+					const lastValidHeight = blockhashObj.lastValidBlockHeight;
+					
 					let signature = await phantom.signAndSendTransaction(transaction);
 					txSign = signature.signature;
 					
@@ -127,20 +126,20 @@ if(isset($_POST['trxid'])){
 					var txSuccess = false;
 					var checkStatus = true;
 					while(checkStatus){
-						var status = await connection.getSignatureStatus(txSign, {searchTransactionHistory:true,});
-						console.log(status);
-						if(status.value === null){
+						var signStatus = await connection.getSignatureStatuses([txSign], {searchTransactionHistory:true,});
+						if(!signStatus.value || signStatus.value.length === 0){
 							txStatus = "False";
 							fnMsg = "Failed to get transaction status";
 							checkStatus = false;
 						}else{
-							if(status.value.err !== null){
+							const status = signStatus.value[0];
+							if(status.err !== null){
 								//trx Failed
 								txStatus = "False";
 								fnMsg = "Transaction failed: ${JSON.stringify(status.value.err)}";
 								checkStatus = false;
 							}else{
-								if(status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized'){
+								if(status && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')){
 									txSuccess = true;
 									checkStatus = false;
 									txStatus = "True";
