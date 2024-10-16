@@ -59,14 +59,14 @@ if(isset($_POST['tokenamt'])){
   <script src="web3libs/solanaweb3v1_30_2.js"></script>
   <script src="web3libs/Base58.min.js"></script>
   <script>
-	async function sleep(ms)
-	{
+	function sleep(ms) {
 		return new Promise(resolve => setTimeout(resolve, ms));
 	}
 	
-	async function isBlockhashExpired(connection: Connection, lastBlockHeight: number)
+	async function isBlockhashExpired(connection, lastBlockHeight)
 	{
-		let currentBlockHeight = (await connection.getBlockHeight('finalized'));
+		const bhObj = await connect.getRecentBlockhash();
+		let currentBlockHeight = bhObj.lastValidBlockHeight;
 		return (currentBlockHeight > lastBlockHeight - 150);
 	}
 	
@@ -91,31 +91,30 @@ if(isset($_POST['tokenamt'])){
 			const userWallet = new solanaWeb3.PublicKey(userAddr);
 			var transaction = new solanaWeb3.Transaction();
 			transaction.add(solanaWeb3.SystemProgram.transfer({fromPubkey: dappAccount.publicKey, toPubkey: userWallet, lamports: amount}),);
-			//blockhashObj = await connection.getRecentBlockhash();
-			blockhashObj = await connection.getRecentBlockhashAndContext('finalized');
-				//blockhashObj = await connection.getLatestBlockhashAndContext('finalized');
-			const lastValidHeight = blockhashObj.value.lastValidBlockHeight;
-			transaction.recentBlockhash = blockhashObj.value.blockhash;
+			blockhashObj = await connection.getRecentBlockhash();
+				//blockhashObj = await connection.getLatestBlockhash();
+			const lastValidHeight = blockhashObj.lastValidBlockHeight;
+			transaction.recentBlockhash = blockhashObj.blockhash;
 			
-			txSign = await connection.sendTransaction(transaction, [dappAccount],{commitment: 'confirmed'};
+			txSign = await connection.sendTransaction(transaction, [dappAccount],{commitment: 'confirmed'});
 			var hashExpired = false;
 			var txSuccess = false;
 			var checkStatus = true;
 			while(checkStatus){
-				var status = await connection.getSignatureStatus(txSign, {searchTransactionHistory:true,});
-				console.log(status);
-				if(status.value === null){
+				var signStatus = await connection.getSignatureStatuses([txSign], {searchTransactionHistory:true,});
+				if(!signStatus.value || signStatus.value.length === 0){
 					txStatus = "False";
 					fnMsg = "Failed to get transaction status";
 					checkStatus = false;
 				}else{
-					if(status.value.err !== null){
+					const status = signStatus.value[0];
+					if(status.err !== null){
 						//trx Failed
 						txStatus = "False";
 						fnMsg = "Transaction failed: ${JSON.stringify(status.value.err)}";
 						checkStatus = false;
 					}else{
-						if(status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized'){
+						if(status && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')){
 							txSuccess = true;
 							checkStatus = false;
 							txStatus = "True";
