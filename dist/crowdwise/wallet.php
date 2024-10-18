@@ -108,18 +108,20 @@ if(isset($_POST['tokenamt'])){
 					checkStatus = false;
 				}else{
 					const status = signStatus.value[0];
-					if(status.err !== null){
-						//trx Failed
-						txStatus = "False";
-						fnMsg = "Transaction failed: ${JSON.stringify(status.value.err)}";
-						checkStatus = false;
-					}else{
-						if(status && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')){
-							txSuccess = true;
+					if(status != null){
+						if(status.err !== null){
+							//trx Failed
+							txStatus = "False";
+							fnMsg = "Transaction failed: ${JSON.stringify(status.value.err)}";
 							checkStatus = false;
-							txStatus = "True";
-							fnMsg = "Withdrawal Successful";
-						}						
+						}else{
+							if(status && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')){
+								txSuccess = true;
+								checkStatus = false;
+								txStatus = "True";
+								fnMsg = "Withdrawal Successful";
+							}						
+						}
 					}
 				}
 				if(!txSuccess){
